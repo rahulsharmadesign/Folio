@@ -31,3 +31,15 @@ After each milestone, run the app, compare it with `design/screens/`, and move o
 - **Ollama** (already on this Mac): `ollama serve`, then pull a small instruct model and pick it in Folio › Settings › AI.
 - **Apple Intelligence** (macOS 26+): used automatically when available.
 - **API key:** Anthropic, OpenAI, Groq or any OpenAI-compatible endpoint. The key is stored in the Keychain.
+
+## Development
+
+```bash
+xcodegen                                   # generate Folio.xcodeproj from project.yml
+xcodebuild -scheme Folio -derivedDataPath build/DerivedData build test
+swift tools/gen-tokens.swift               # regenerate Folio/Design/Tokens.swift after design/tokens.json changes
+tools/snap.sh today --fixtures             # 2× window capture at 1280×800 → /tmp/folio-today.png
+swift tools/compare.swift design/screens/02-today@2x.png /tmp/folio-today.png /tmp/cmp.png
+```
+
+`--fixtures` (the `-FolioDesignFixtures YES` launch argument) fills screens with the mockups' sample content so they can be compared with `design/screens/`. `-FolioRoute <route>` opens a given screen.
