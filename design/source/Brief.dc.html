@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — The Brief</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+.turn{cursor:pointer}
+.turn:focus-visible{outline:2px solid #34507A;outline-offset:-6px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; background: #F6F1E7; color: #23201B; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif">
+  <article style="position: absolute; left: 330px; width: 620px; top: 108px; font-family: Literata, Georgia, serif; font-size: 19px; line-height: 1.6; text-wrap: pretty">
+    <sc-if value="{{onFirst}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px">
+          <span style="font-family: Geist, 'Helvetica Neue', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Collective behaviour</span>
+          <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 42px; line-height: 1.08; letter-spacing: -0.02em">How honeybees choose a new home</h1>
+          <p style="margin: 0; font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 19px; line-height: 1.45; color: #5A554C">Ten thousand bees, no leader, and a decision that is almost always right.</p>
+        </div>
+        <p style="margin: 0">Every spring, a crowded honeybee colony does something remarkable: it splits. The old queen leaves with thousands of workers, and the swarm hangs from a branch in a quiet cluster while it decides where to live next.</p>
+        <p style="margin: 0; text-indent: 1.4em">The queen doesn’t decide. A few hundred older workers — the scouts — fly out to inspect hollow trees and crevices. A good home has a cavity of roughly forty litres, a small entrance, and some height off the ground.</p>
+        <p style="margin: 0; text-indent: 1.4em">A scout that finds a promising site returns and performs a waggle dance on the swarm. The angle of the dance points toward the site; its length encodes distance. The better the site, the longer she dances — and the more recruits go to see for themselves.</p>
+      </div>
+    </sc-if>
+    <sc-if value="{{onSecond}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <p style="margin: 0; text-indent: 1.4em">Rival sites are settled in a way that looks almost like debate. Scouts backing one site deliver a brief head-butt and a short vibration — a stop signal — to bees dancing for its rivals. Weaker options lose their advocates; stronger ones gather momentum.</p>
+        <p style="margin: 0; text-indent: 1.4em">No single bee compares every option. The swarm waits for a quorum: once twenty or thirty scouts are at the same site at once, they return and begin <em>piping</em>, a signal that tells the swarm to warm its flight muscles. Soon the whole cloud lifts off together.</p>
+        <p style="margin: 0; text-indent: 1.4em">The biologist Thomas Seeley, who spent decades watching this, argues it is a model for good group decisions: many options, open debate, independent checking, and a clear threshold for agreement.</p>
+        <div style="margin-top: 10px; padding-top: 16px; border-top: 1px solid #E3DACA; display: flex; flex-direction: column; gap: 12px; font-family: Geist, 'Helvetica Neue', sans-serif">
+          <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #5A554C">Written by AI from these sources</span>
+          <ol id="sources" style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: #5A554C; display: flex; flex-direction: column; gap: 4px">
+            <li>Thomas D. Seeley, <em>Honeybee Democracy</em>. Princeton University Press, 2010.</li>
+            <li>Seeley et al., “Stop signals provide cross inhibition in collective decision-making by honeybee swarms.” <em>Science</em>, 2012.</li>
+          </ol>
+          <div style="display: flex; gap: 8px; margin-top: 6px; position: relative; z-index: 2">
+            <button type="button" style="height: 40px; padding: 0 16px; border-radius: 10px; border: 0; background: #23201B; color: #F6F1E7; font: inherit; font-size: 13px; font-weight: 500">Go deeper tomorrow</button>
+            <button type="button" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #D6CCB8; background: transparent; font: inherit; font-size: 13px; color: #23201B">More like this</button>
+            <button type="button" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 0; background: transparent; font: inherit; font-size: 13px; color: #5A554C">Less like this</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </article><sc-if value="{{onFirst}}" hint-placeholder-val="{{ true }}">
+    <img src="../assets/wc-ochre.png" alt="" style="position: absolute; right: -120px; top: -130px; width: 560px; height: 400px; mix-blend-mode: multiply; opacity: 0.5">
+  </sc-if>
+  <div class="grain" style="position: absolute; inset: 0; opacity: 0.9; pointer-events: none"></div>
+
+  <button type="button" class="turn" aria-label="Previous page" onClick="{{prev}}" style="position: absolute; left: 0; top: 90px; bottom: 90px; width: 260px; border: 0; background: transparent; padding: 0"></button>
+  <button type="button" class="turn" aria-label="Next page" onClick="{{next}}" style="position: absolute; right: 0; top: 90px; bottom: 90px; width: 260px; border: 0; background: transparent; padding: 0"></button>
+
+  <header style="position: absolute; left: 0; right: 0; top: 0; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; box-sizing: border-box; font-size: 13px; color: #6E685E">
+    <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; text-decoration: none; color: #6E685E">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+      Today
+    </a>
+    <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 15px">The Brief · Evening edition</span>
+    <span style="width: 60px"></span>
+  </header>
+
+  
+
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; padding: 0 36px; box-sizing: border-box; font-size: 12px; color: #6E685E">
+    <span>The Brief · topic: collective behaviour</span>
+    <div style="display: flex; justify-content: center">
+      <div style="width: 140px; height: 2px; border-radius: 2px; background: #E3DACA; overflow: hidden">
+        <div style="height: 2px; width: {{progress}}; background: #5A554C"></div>
+      </div>
+    </div>
+    <span style="text-align: right">{{left}}</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { page: 1 };
+  }
+  renderVals() {
+    const p = this.state.page;
+    return {
+      onFirst: p === 1,
+      onSecond: p === 2,
+      progress: p === 1 ? '50%' : '100%',
+      left: p === 1 ? 'Page 1 of 2 · 2 min left' : 'Page 2 of 2',
+      next: () => this.setState({ page: 2 }),
+      prev: () => this.setState({ page: 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Reader</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:inherit}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+.turn{cursor:pointer}
+.turn:focus-visible{outline:2px solid #34507A;outline-offset:-6px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; background: {{t.bg}}; color: {{t.ink}}; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif">
+  <div class="grain" style="position: absolute; inset: 0; opacity: {{t.grain}}; pointer-events: none"></div>
+
+  <button type="button" class="turn" aria-label="Previous page" onClick="{{prev}}" style="position: absolute; left: 0; top: 90px; bottom: 90px; width: 260px; border: 0; background: transparent; padding: 0"></button>
+  <button type="button" class="turn" aria-label="Next page" onClick="{{next}}" style="position: absolute; right: 0; top: 90px; bottom: 90px; width: 260px; border: 0; background: transparent; padding: 0"></button>
+
+  <header style="position: absolute; left: 0; right: 0; top: 0; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; box-sizing: border-box; font-size: 13px; color: {{t.ink3}}">
+    <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; text-decoration: none; color: {{t.ink3}}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+      Today
+    </a>
+    <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 15px">Where I Lived, and What I Lived For</span>
+    <a href="ReaderTools.dc.html" aria-label="Show controls" style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; color: {{t.ink3}}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h10"></path></svg>
+    </a>
+  </header>
+
+  <article style="position: absolute; left: 330px; width: 620px; top: 124px; font-family: Literata, Georgia, serif; font-size: 20px; line-height: 1.66; text-wrap: pretty; hyphens: auto">
+    <sc-if value="{{onFirst}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <p style="margin: 0 0 10px; font-family: Geist, 'Helvetica Neue', sans-serif; font-size: 13px; line-height: 1.5; color: {{t.ink2}}; display: flex; gap: 10px">
+          <span style="font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; padding-top: 2px; white-space: nowrap">Previously</span>
+          <span>Thoreau nearly bought the Hollowell farm, then chose the woods instead — moving in on the Fourth of July, 1845.</span>
+        </p>
+        <p style="margin: 0; text-indent: 0"><span style="letter-spacing: 0.07em; font-size: 0.82em">I WENT TO THE WOODS</span> because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived. I did not wish to live what was not life, living is so dear; nor did I wish to practise resignation, unless it was quite necessary.</p>
+        <p style="margin: 0; text-indent: 1.4em">I wanted to live deep and suck out all the marrow of life, to live so sturdily and Spartan-like as to put to rout all that was not life, to cut a broad swath and shave close, to drive life into a corner, and reduce it to its lowest terms, and, if it proved to be mean, why then to get the whole and genuine meanness of it, and publish its meanness to the world; or if it were sublime, to know it by experience, and be able to give a true account of it in my next excursion.</p>
+      </div>
+    </sc-if>
+    <sc-if value="{{onSecond}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <p style="margin: 0; text-indent: 1.4em">For most men, it appears to me, are in a strange uncertainty about it, whether it is of the devil or of God, and have somewhat hastily concluded that it is the chief end of man here to “glorify God and enjoy him forever.”</p>
+        <p style="margin: 0; text-indent: 1.4em">Still we live meanly, like ants; though the fable tells us that we were long ago changed into men; like pygmies we fight with cranes; it is error upon error, and clout upon clout, and our best virtue has for its occasion a superfluous and evitable wretchedness. Our life is frittered away by detail. An honest man has hardly need to count more than his ten fingers, or in extreme cases he may add his ten toes, and lump the rest. Simplicity, simplicity, simplicity! I say, let your affairs be as two or three, and not a hundred or a thousand; instead of a million count half a dozen, and keep your accounts on your thumb-nail.</p>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 18px; margin-top: 14px; font-family: Geist, 'Helvetica Neue', sans-serif">
+          <span aria-hidden="true" style="font-family: Newsreader, Georgia, serif; font-size: 18px; letter-spacing: 0.6em; color: {{t.ink3}}">· · ·</span>
+          <a href="End.dc.html" style="position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid {{t.rule}}; text-decoration: none; font-size: 14px; font-weight: 500; color: {{t.ink}}">Finish this edition</a>
+        </div>
+      </div>
+    </sc-if>
+  </article>
+
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; height: 72px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; padding: 0 36px; box-sizing: border-box; font-size: 12px; color: {{t.ink3}}">
+    <span>Walden · part 14 of 62</span>
+    <div style="display: flex; justify-content: center">
+      <div style="width: 140px; height: 2px; border-radius: 2px; background: {{t.rule}}; overflow: hidden">
+        <div style="height: 2px; width: {{progress}}; background: {{t.ink2}}"></div>
+      </div>
+    </div>
+    <span style="text-align: right">{{left}}</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Paper","Sage","Mist","Dusk"],"default":"Paper"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { page: 1 };
+  }
+  renderVals() {
+    const themes = {
+      Paper: { bg: '#F6F1E7', ink: '#23201B', ink2: '#5A554C', ink3: '#6E685E', rule: '#E3DACA', grain: 0.9 },
+      Sage:  { bg: '#EEF0E3', ink: '#1F231B', ink2: '#525A48', ink3: '#636B58', rule: '#D8DDC8', grain: 0.8 },
+      Mist:  { bg: '#ECEFF1', ink: '#1C2229', ink2: '#4F5861', ink3: '#5E6771', rule: '#D5DCE2', grain: 0.7 },
+      Dusk:  { bg: '#1F1D1A', ink: '#E9E2D4', ink2: '#B8AF9F', ink3: '#A39A8A', rule: '#3A3630', grain: 0 }
+    };
+    const t = themes[this.props.theme ?? 'Paper'] || themes.Paper;
+    const p = this.state.page;
+    return {
+      t,
+      onFirst: p === 1,
+      onSecond: p === 2,
+      progress: p === 1 ? '50%' : '100%',
+      left: p === 1 ? 'Page 1 of 2 · 2 min left' : 'Page 2 of 2 · under a minute',
+      next: () => this.setState({ page: 2 }),
+      prev: () => this.setState({ page: 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

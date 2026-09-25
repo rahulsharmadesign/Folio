@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Appearance</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;family=Instrument+Serif:ital@0;1&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;1,8..60,400&amp;family=Atkinson+Hyperlegible:wght@400;700&amp;family=Manrope:wght@400;500;600&amp;family=DM+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+.pick{cursor:pointer}
+.pick:focus-visible{outline:2px solid #34507A;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; display: flex; background: #F6F1E7; position: relative; overflow: hidden; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; color: #23201B">
+  <dc-import name="Sidebar" active="appearance" hint-size="232px,800px"></dc-import>
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 56px 56px 32px 64px; display: grid; grid-template-columns: 488px minmax(0, 1fr); gap: 48px">
+    <div style="display: flex; flex-direction: column; gap: 22px">
+      <header style="display: flex; flex-direction: column; gap: 8px">
+        <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 40px; line-height: 1.05; letter-spacing: -0.015em">Appearance</h1>
+        <p style="margin: 0; font-size: 15px; color: #5A554C">Make the page yours. Changes preview on the right.</p>
+      </header>
+
+      <section aria-labelledby="h-paper" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-paper" style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Paper</h2>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{themes}}" as="t" hint-placeholder-count="4">
+            <button type="button" class="pick" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}" style="display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: transparent; font: inherit; text-align: left">
+              <span style="display: block; position: relative; height: 62px; border-radius: 10px; overflow: hidden; background: {{t.bg}}; box-shadow: {{t.ring}}">
+                <img src="{{t.wash}}" alt="" style="position: absolute; left: -26px; top: -20px; width: 150px; height: 107px; mix-blend-mode: {{t.blend}}; opacity: {{t.washOp}}">
+                <span style="position: absolute; left: 10px; bottom: 6px; font-family: Newsreader, Georgia, serif; font-size: 18px; color: {{t.ink}}">Aa</span>
+              </span>
+              <span style="font-size: 13px; color: #23201B">{{t.label}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-head" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-head" style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Headings</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{heads}}" as="f" hint-placeholder-count="4">
+            <button type="button" class="pick" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid {{f.border}}; background: {{f.bg}}; font-family: {{f.stack}}; font-size: 17px; color: #23201B">{{f.label}}</button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-body" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-body" style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Reading text</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{bodies}}" as="f" hint-placeholder-count="4">
+            <button type="button" class="pick" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid {{f.border}}; background: {{f.bg}}; font-family: {{f.stack}}; font-size: 15px; color: #23201B">{{f.label}}</button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-ui" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="h-ui" style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Interface</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{uis}}" as="f" hint-placeholder-count="3">
+            <button type="button" class="pick" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid {{f.border}}; background: {{f.bg}}; font-family: {{f.stack}}; font-size: 14px; color: #23201B">{{f.label}}</button>
+          </sc-for>
+        </div>
+      </section>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+        <section aria-labelledby="h-accent" style="display: flex; flex-direction: column; gap: 10px">
+          <h2 id="h-accent" style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Accent</h2>
+          <div style="display: flex; gap: 10px">
+            <sc-for list="{{accents}}" as="a" hint-placeholder-count="4">
+              <button type="button" class="pick" aria-label="{{a.label}}" aria-pressed="{{a.pressed}}" onClick="{{a.pick}}" style="width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-shadow: {{a.ring}}">
+                <span style="width: 30px; height: 30px; border-radius: 50%; background: {{a.hex}}"></span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+        <section style="display: flex; flex-direction: column; gap: 10px">
+          <label for="size" style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Text size · {{sizeLabel}}</label>
+          <input id="size" type="range" min="16" max="24" step="1" value="{{size}}" onChange="{{setSize}}" style="width: 100%; height: 44px; accent-color: {{accent}}">
+        </section>
+      </div>
+    </div>
+
+    <section aria-label="Preview" style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Preview</span>
+      <div style="position: relative; flex-grow: 1; border-radius: 18px; overflow: hidden; background: {{p.bg}}; color: {{p.ink}}; border: 1px solid {{p.rule}}; box-shadow: 0 24px 60px -30px rgba(60,48,30,0.35)">
+        <img src="{{p.wash}}" alt="" style="position: absolute; right: -140px; top: -110px; width: 440px; height: 313px; mix-blend-mode: {{p.blend}}; opacity: {{p.washOp}}">
+        <div class="grain" style="position: absolute; inset: 0; opacity: {{p.grain}}"></div>
+        <div style="position: relative; padding: 40px 36px; display: flex; flex-direction: column; gap: 16px">
+          <span style="font-family: {{uiStack}}; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: {{p.ink2}}">Morning edition · Walden</span>
+          <h3 style="margin: 0; font-family: {{headStack}}; font-weight: 400; font-size: 34px; line-height: 1.1; letter-spacing: -0.01em">Where I Lived, and What I Lived For</h3>
+          <p style="margin: 0; font-family: {{bodyStack}}; font-size: {{sizePx}}; line-height: 1.65">I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived.</p>
+          <div style="display: flex; align-items: center; gap: 14px; margin-top: 6px; font-family: {{uiStack}}">
+            <span style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 10px; background: {{accent}}; color: #FBF8F2; font-size: 14px; font-weight: 500">Begin reading</span>
+            <span style="font-size: 13px; color: {{p.ink2}}">4 min</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: 'Paper', head: 'Newsreader', body: 'Literata', ui: 'Geist', accent: 'Ink', size: 19 };
+  }
+  renderVals() {
+    const s = this.state;
+    const W = {
+      lapis: '../assets/wc-lapis.png',
+      sage: '../assets/wc-sage.png',
+      ochre: '../assets/wc-ochre.png',
+      plum: '../assets/wc-plum.png'
+    };
+    const T = {
+      Paper: { bg: '#F6F1E7', ink: '#23201B', ink2: '#5A554C', rule: '#E3DACA', wash: W.ochre, blend: 'multiply', washOp: 0.7, grain: 0.9 },
+      Sage:  { bg: '#EEF0E3', ink: '#1F231B', ink2: '#525A48', rule: '#D8DDC8', wash: W.sage, blend: 'multiply', washOp: 0.75, grain: 0.8 },
+      Mist:  { bg: '#ECEFF1', ink: '#1C2229', ink2: '#4F5861', rule: '#D5DCE2', wash: W.lapis, blend: 'multiply', washOp: 0.7, grain: 0.7 },
+      Dusk:  { bg: '#1F1D1A', ink: '#E9E2D4', ink2: '#B8AF9F', rule: '#3A3630', wash: W.plum, blend: 'screen', washOp: 0.35, grain: 0 }
+    };
+    const themes = Object.keys(T).map((k) => ({
+      label: k, bg: T[k].bg, ink: T[k].ink, wash: T[k].wash, blend: T[k].blend, washOp: T[k].washOp,
+      pressed: s.theme === k ? 'true' : 'false',
+      ring: s.theme === k ? '0 0 0 2px #F6F1E7, 0 0 0 3.5px #23201B' : 'inset 0 0 0 1px #E0D6C3',
+      pick: () => this.setState({ theme: k })
+    }));
+    const chip = (list, key) => list.map((f) => ({
+      ...f,
+      pressed: s[key] === f.label ? 'true' : 'false',
+      border: s[key] === f.label ? '#23201B' : '#DDD3C0',
+      bg: s[key] === f.label ? '#FBF8F2' : 'transparent',
+      pick: () => this.setState({ [key]: f.label })
+    }));
+    const HEADS = [
+      { label: 'Newsreader', stack: 'Newsreader, Georgia, serif' },
+      { label: 'Instrument Serif', stack: '"Instrument Serif", Georgia, serif' },
+      { label: 'EB Garamond', stack: '"EB Garamond", Garamond, serif' },
+      { label: 'Geist', stack: 'Geist, "Helvetica Neue", sans-serif' }
+    ];
+    const BODIES = [
+      { label: 'Literata', stack: 'Literata, Georgia, serif' },
+      { label: 'Source Serif 4', stack: '"Source Serif 4", Georgia, serif' },
+      { label: 'Newsreader', stack: 'Newsreader, Georgia, serif' },
+      { label: 'Atkinson Hyperlegible', stack: '"Atkinson Hyperlegible", "Helvetica Neue", sans-serif' }
+    ];
+    const UIS = [
+      { label: 'Geist', stack: 'Geist, "Helvetica Neue", sans-serif' },
+      { label: 'Manrope', stack: 'Manrope, "Helvetica Neue", sans-serif' },
+      { label: 'DM Sans', stack: '"DM Sans", "Helvetica Neue", sans-serif' }
+    ];
+    const ACC = [
+      { label: 'Ink', hex: '#34507A' },
+      { label: 'Moss', hex: '#4F6339' },
+      { label: 'Plum', hex: '#66486F' },
+      { label: 'Graphite', hex: '#3B3935' }
+    ];
+    const accentHex = (ACC.find((a) => a.label === s.accent) || ACC[0]).hex;
+    const accents = ACC.map((a) => ({
+      ...a,
+      pressed: s.accent === a.label ? 'true' : 'false',
+      ring: s.accent === a.label ? 'inset 0 0 0 1.5px #23201B' : 'none',
+      pick: () => this.setState({ accent: a.label })
+    }));
+    const find = (list, l) => (list.find((f) => f.label === l) || list[0]).stack;
+    return {
+      themes,
+      heads: chip(HEADS, 'head'),
+      bodies: chip(BODIES, 'body'),
+      uis: chip(UIS, 'ui'),
+      accents,
+      accent: accentHex,
+      p: T[s.theme],
+      headStack: find(HEADS, s.head),
+      bodyStack: find(BODIES, s.body),
+      uiStack: find(UIS, s.ui),
+      size: s.size,
+      sizePx: s.size + 'px',
+      sizeLabel: String(s.size),
+      setSize: (e) => this.setState({ size: Number(e.target.value) })
+    };
+  }
+}
+</script>
+</body>
+</html>

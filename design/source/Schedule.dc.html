@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Schedule</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; display: flex; background: #F6F1E7; position: relative; overflow: hidden; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; color: #23201B">
+  <dc-import name="Sidebar" active="schedule" hint-size="232px,800px"></dc-import>
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 64px 56px 36px 64px; display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 56px">
+    <div style="display: flex; flex-direction: column; gap: 26px; min-width: 0">
+      <header style="display: flex; flex-direction: column; gap: 8px">
+        <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 40px; line-height: 1.05; letter-spacing: -0.015em">Schedule</h1>
+        <p style="margin: 0; font-size: 15px; color: #5A554C">When editions arrive, and how long they are.</p>
+      </header>
+
+      <div role="group" aria-label="Cadence" style="display: flex; gap: 4px; padding: 4px; background: #EEE7D8; border-radius: 10px; align-self: flex-start">
+        <sc-for list="{{cadences}}" as="c" hint-placeholder-count="3">
+          <button type="button" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="height: 36px; padding: 0 16px; border-radius: 7px; border: 0; background: {{c.bg}}; color: {{c.color}}; box-shadow: {{c.shadow}}; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer">{{c.label}}</button>
+        </sc-for>
+      </div>
+
+      <section aria-label="Deliveries" style="display: flex; flex-direction: column; border-top: 1px solid #E3DACA">
+        <sc-for list="{{slots}}" as="s" hint-placeholder-count="2">
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 160px; align-items: center; gap: 16px; min-height: 62px; border-bottom: 1px solid #E3DACA">
+            <button type="button" style="justify-self: start; height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid #D6CCB8; background: #FBF8F2; font-family: Newsreader, Georgia, serif; font-size: 19px; color: #23201B">{{s.time}}</button>
+            <span style="display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 14px; font-weight: 500">{{s.what}}</span>
+              <span style="font-size: 13px; color: #5A554C">{{s.detail}}</span>
+            </span>
+            <button type="button" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border-radius: 8px; border: 0; background: transparent; font: inherit; font-size: 13px; color: #5A554C">
+              {{s.days}}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+            </button>
+          </div>
+        </sc-for>
+      </section>
+
+      <section aria-label="Edition length" style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline">
+          <label for="len" style="font-size: 14px; font-weight: 500">Edition length</label>
+          <span style="font-size: 13px; color: #5A554C">{{lenLabel}}</span>
+        </div>
+        <input id="len" type="range" min="800" max="2200" step="100" value="{{len}}" onChange="{{setLen}}" style="width: 100%; accent-color: #34507A">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6E685E">
+          <span>Half a page</span>
+          <span>Two pages</span>
+        </div>
+      </section>
+
+      <section aria-label="Delivery rules" style="display: flex; flex-direction: column; border-top: 1px solid #E3DACA">
+        <label style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-bottom: 1px solid #E3DACA">
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Editions never pile up</span><span style="font-size: 13px; color: #5A554C">Miss one and the next simply takes its place — no backlog</span></span>
+          <input type="checkbox" checked="{{ true }}" onChange="{{noop}}" style="width: 18px; height: 18px; accent-color: #34507A">
+        </label>
+        <label style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-bottom: 1px solid #E3DACA">
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Quiet arrival</span><span style="font-size: 13px; color: #5A554C">Show in the menu bar only; no banner or sound</span></span>
+          <input type="checkbox" checked="{{ true }}" onChange="{{noop}}" style="width: 18px; height: 18px; accent-color: #34507A">
+        </label>
+      </section>
+    </div>
+
+    <aside aria-label="Your day" style="position: relative; display: flex; flex-direction: column; gap: 14px; padding-top: 8px">
+      <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Your day</span>
+      <div style="position: relative; height: 560px; border-radius: 16px; background: #F1EADC; border: 1px solid #E3DACA; overflow: hidden">
+        <div class="grain" style="position: absolute; inset: 0"></div>
+        <div style="position: absolute; left: 56px; top: 24px; bottom: 24px; width: 1px; background: #CFC4AE"></div>
+        <span style="position: absolute; left: 16px; top: 16px; font-size: 11px; color: #5A554C">00:00</span>
+        <span style="position: absolute; left: 16px; top: 268px; font-size: 11px; color: #5A554C">12:00</span>
+        <span style="position: absolute; left: 16px; bottom: 16px; font-size: 11px; color: #5A554C">24:00</span>
+        <sc-for list="{{slots}}" as="s" hint-placeholder-count="2">
+          <div style="position: absolute; left: 36px; right: 16px; top: {{s.top}}; display: flex; align-items: center; gap: 12px">
+            <div style="position: relative; width: 40px; height: 40px; flex-shrink: 0">
+              <img src="{{s.wash}}" alt="" style="position: absolute; left: -22px; top: -16px; width: 84px; height: 60px; mix-blend-mode: multiply; opacity: 0.95">
+            </div>
+            <span style="display: flex; flex-direction: column; gap: 1px">
+              <span style="font-family: Newsreader, Georgia, serif; font-size: 17px">{{s.time}}</span>
+              <span style="font-size: 12px; color: #3E3A33">{{s.what}}</span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cadence: 'twice', len: 2200 };
+  }
+  renderVals() {
+    const L = '../assets/wc-lapis.png';
+    const O = '../assets/wc-ochre.png';
+    const S = '../assets/wc-sage.png';
+    const pos = (h) => (24 + (h / 24) * 512 - 20) + 'px';
+    const sets = {
+      once: [
+        { time: '07:00', h: 7, what: 'Passage + The Brief', detail: 'One page of your serial, then a short Brief', days: 'Every day', wash: L }
+      ],
+      twice: [
+        { time: '07:00', h: 7, what: 'Passage', detail: 'Next part of Walden', days: 'Every day', wash: L },
+        { time: '21:00', h: 21, what: 'The Brief', detail: 'A topic from your list, with sources', days: 'Every day', wash: O }
+      ],
+      custom: [
+        { time: '06:30', h: 6.5, what: 'Passage', detail: 'Next part of Walden', days: 'Weekdays', wash: L },
+        { time: '13:00', h: 13, what: 'Publication', detail: 'Best of your feeds, trimmed', days: 'Mon, Wed, Fri', wash: S },
+        { time: '21:30', h: 21.5, what: 'The Brief', detail: 'A topic from your list, with sources', days: 'Every day', wash: O }
+      ]
+    };
+    const c = this.state.cadence;
+    const slots = sets[c].map((s) => ({ ...s, top: pos(s.h) }));
+    const defs = [
+      { id: 'once', label: 'Once a day' },
+      { id: 'twice', label: 'Twice a day' },
+      { id: 'custom', label: 'Custom' }
+    ];
+    const cadences = defs.map((d) => ({
+      ...d,
+      pressed: c === d.id ? 'true' : 'false',
+      bg: c === d.id ? '#FBF8F2' : 'transparent',
+      color: c === d.id ? '#23201B' : '#5A554C',
+      shadow: c === d.id ? '0 1px 2px rgba(60,48,30,0.12)' : 'none',
+      pick: () => this.setState({ cadence: d.id })
+    }));
+    const len = this.state.len;
+    const pages = len <= 1000 ? 'half a page' : len <= 1600 ? 'about a page' : 'about two pages';
+    const mins = Math.max(1, Math.round(len / 550));
+    const lenLabel = 'Up to ' + len.toLocaleString('en-US') + ' characters · ' + pages + ' · ' + mins + ' min';
+    return {
+      noop: () => {},
+      cadences,
+      slots,
+      len,
+      lenLabel,
+      setLen: (e) => this.setState({ len: Number(e.target.value) })
+    };
+  }
+}
+</script>
+</body>
+</html>

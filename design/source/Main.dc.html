@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; display: flex; background: #F6F1E7; position: relative; overflow: hidden; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; color: #23201B">
+  <dc-import name="Sidebar" active="today" hint-size="232px,800px"></dc-import>
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 56px 72px 40px; display: flex; flex-direction: column; gap: 28px; position: relative">
+    <header style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 13px; color: #5A554C; letter-spacing: 0.01em">Saturday, 26 September</span>
+        <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 44px; line-height: 1.05; letter-spacing: -0.015em">Good morning, Rahul.</h1>
+        <p style="margin: 0; font-size: 16px; color: #5A554C">Your morning edition is ready. About four minutes.</p>
+      </div>
+    </header>
+
+    <section aria-label="Today's editions" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+      <article style="display: flex; flex-direction: column; background: #FBF8F2; border: 1px solid #E3DACA; border-radius: 16px; overflow: hidden">
+        <div style="height: 184px; position: relative; overflow: hidden; background: #F3ECDF">
+          <img src="../assets/wc-lapis.png" alt="" style="position: absolute; left: -40px; top: -70px; width: 420px; height: 300px; mix-blend-mode: multiply; opacity: 0.9">
+          <img src="../assets/wc-sage.png" alt="" style="position: absolute; right: -60px; top: 10px; width: 360px; height: 256px; mix-blend-mode: multiply; opacity: 0.75">
+          <div class="grain" style="position: absolute; inset: 0; opacity: 0.8"></div>
+          <div style="position: absolute; left: 24px; top: 20px; display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: rgba(251,248,242,0.86); border-radius: 999px; font-size: 12px; font-weight: 500; color: #23201B">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #34507A"></span>
+            Morning edition · 07:00
+          </div>
+        </div>
+        <div style="padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #5A554C">Passage · Walden, part 14 of 62</span>
+          <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 27px; line-height: 1.15; letter-spacing: -0.01em">Where I Lived, and What I Lived For</h2>
+          <span style="font-size: 14px; color: #5A554C">Henry David Thoreau · 4 min</span>
+          <div style="display: flex; gap: 12px; align-items: center; margin-top: 12px">
+            <a href="Reader.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; background: #23201B; color: #F6F1E7; text-decoration: none; font-size: 14px; font-weight: 500">
+              Begin reading
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+            </a>
+            <span style="font-size: 13px; color: #5A554C">Continues from yesterday</span>
+          </div>
+        </div>
+      </article>
+
+      <article style="display: flex; flex-direction: column; background: #FBF8F2; border: 1px solid #E3DACA; border-radius: 16px; overflow: hidden">
+        <div style="height: 184px; position: relative; overflow: hidden; background: #F3ECDF">
+          <img src="../assets/wc-ochre.png" alt="" style="position: absolute; left: 30px; top: -50px; width: 400px; height: 285px; mix-blend-mode: multiply; opacity: 0.8">
+          <img src="../assets/wc-rose.png" alt="" style="position: absolute; right: -90px; top: 40px; width: 340px; height: 242px; mix-blend-mode: multiply; opacity: 0.6">
+          <div class="grain" style="position: absolute; inset: 0; opacity: 0.8"></div>
+          <div style="position: absolute; left: 24px; top: 20px; display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: rgba(251,248,242,0.86); border-radius: 999px; font-size: 12px; font-weight: 500; color: #5A554C">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+            Evening edition · 21:00
+          </div>
+        </div>
+        <div style="padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #5A554C">The Brief · written for you</span>
+          <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 27px; line-height: 1.15; letter-spacing: -0.01em">How honeybees choose a new home</h2>
+          <span style="font-size: 14px; color: #5A554C">From your topic: collective behaviour · 4 min</span>
+          <div style="display: flex; gap: 12px; align-items: center; margin-top: 12px">
+            <a href="Brief.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #D6CCB8; color: #23201B; text-decoration: none; font-size: 14px; font-weight: 500">Arrives tonight · peek</a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section aria-label="Resurfaced highlight" style="display: flex; align-items: center; gap: 28px; padding: 24px 28px; border-radius: 16px; background: #EFE8DA">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34507A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v4.5h-4.5"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1">
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #5A554C">Back from four days ago</span>
+        <p style="margin: 0; font-family: Literata, Georgia, serif; font-size: 19px; line-height: 1.45; font-style: italic">“The mass of men lead lives of quiet desperation.”</p>
+        <span style="font-size: 13px; color: #5A554C">Walden · Economy</span>
+      </div>
+      <div style="display: flex; gap: 8px; flex-shrink: 0">
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid #D6CCB8; background: transparent; font: inherit; font-size: 13px; color: #23201B">Keep</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 10px; border: 0; background: transparent; font: inherit; font-size: 13px; color: #5A554C">Let it go</button>
+      </div>
+    </section>
+
+    <p style="margin: auto 0 0; font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 16px; color: #5A554C">Nothing else today. That’s the point.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

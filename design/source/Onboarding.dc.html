@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Welcome</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+.opt{cursor:pointer}
+.opt:focus-visible{outline:2px solid #34507A;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; background: #F6F1E7; color: #23201B; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; display: grid; grid-template-columns: 560px 1fr">
+  <div style="position: relative; overflow: hidden; background: #F1EADC; border-right: 1px solid #E3DACA">
+    <img src="../assets/wc-lapis.png" alt="" style="position: absolute; left: -140px; top: 60px; width: 720px; height: 512px; mix-blend-mode: multiply; opacity: 0.75">
+    <img src="../assets/wc-sage.png" alt="" style="position: absolute; left: 150px; top: 300px; width: 560px; height: 398px; mix-blend-mode: multiply; opacity: 0.6">
+    <img src="../assets/wc-ochre.png" alt="" style="position: absolute; left: -60px; top: 470px; width: 460px; height: 327px; mix-blend-mode: multiply; opacity: 0.5">
+    <div class="grain" style="position: absolute; inset: 0; opacity: 1; pointer-events: none"></div>
+    <div style="position: absolute; left: 20px; top: 18px; display: flex; gap: 8px; padding: 0 8px">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #E9695E"></span>
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #F2BE4E"></span>
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #62C356"></span>
+    </div>
+    <div style="position: absolute; left: 64px; top: 96px; display: flex; flex-direction: column; gap: 18px; width: 420px">
+      <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 64px; line-height: 1; letter-spacing: -0.02em">Folio</span>
+      <p style="margin: 0; font-family: Newsreader, Georgia, serif; font-size: 26px; line-height: 1.25; letter-spacing: -0.01em">A page or two of something worth your attention. Twice a day. Nothing to scroll.</p>
+    </div>
+  </div>
+
+  <main style="box-sizing: border-box; padding: 96px 88px 56px; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Step 1 of 3</span>
+      <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 38px; line-height: 1.1; letter-spacing: -0.015em">What should your editions hold?</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #5A554C">Pick any. You can change the mix at any time.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <sc-for list="{{options}}" as="o" hint-placeholder-count="3">
+        <button type="button" class="opt" aria-pressed="{{o.pressed}}" onClick="{{o.toggle}}" style="display: flex; align-items: flex-start; gap: 16px; text-align: left; padding: 18px 20px; border-radius: 14px; border: 1px solid {{o.border}}; background: {{o.bg}}; font: inherit; color: #23201B">
+          <span style="flex-shrink: 0; margin-top: 2px; width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid {{o.box}}; background: {{o.boxFill}}; display: inline-flex; align-items: center; justify-content: center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F6F1E7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.2">{{o.title}}</span>
+            <span style="font-size: 14px; line-height: 1.45; color: #5A554C">{{o.body}}</span>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center">
+      <div aria-hidden="true" style="display: flex; gap: 6px">
+        <span style="width: 22px; height: 4px; border-radius: 2px; background: #23201B"></span>
+        <span style="width: 8px; height: 4px; border-radius: 2px; background: #D6CCB8"></span>
+        <span style="width: 8px; height: 4px; border-radius: 2px; background: #D6CCB8"></span>
+      </div>
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 22px; border-radius: 10px; background: #23201B; color: #F6F1E7; text-decoration: none; font-size: 14px; font-weight: 500">
+        Continue
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+      </a>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picked: { books: true, pubs: false, brief: true } };
+  }
+  renderVals() {
+    const defs = [
+      { id: 'books', title: 'Great books, one piece at a time', body: 'Classics serialised into short parts that end at natural breaks, with a one-line recap each time.' },
+      { id: 'pubs', title: 'Essays & publications', body: 'Your EPUBs, newsletters and RSS feeds, trimmed to the part worth reading.' },
+      { id: 'brief', title: 'The Brief', body: 'An AI-written summary of a topic you care about, with its sources listed underneath.' }
+    ];
+    const picked = this.state.picked;
+    const options = defs.map((d) => {
+      const on = !!picked[d.id];
+      return {
+        ...d,
+        pressed: on ? 'true' : 'false',
+        border: on ? '#23201B' : '#E0D6C3',
+        bg: on ? '#FBF8F2' : 'transparent',
+        box: on ? '#23201B' : '#B9AE9A',
+        boxFill: on ? '#23201B' : 'transparent',
+        toggle: () => this.setState({ picked: { ...picked, [d.id]: !on } })
+      };
+    });
+    return { options };
+  }
+}
+</script>
+</body>
+</html>

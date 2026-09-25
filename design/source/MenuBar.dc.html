@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Menu bar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+</style>
+</helmet>
+<div style="width: 360px; height: 460px; box-sizing: border-box; position: relative; overflow: hidden; background: #F6F1E7; color: #23201B; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px">
+    <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 20px">Folio</span>
+    <span style="font-size: 12px; color: #5A554C">Sat 26 Sep</span>
+  </div>
+
+  <a href="Reader.dc.html" style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 14px; background: #F1EADC; border: 1px solid #E3DACA; text-decoration: none; color: #23201B">
+    <img src="../assets/wc-lapis.png" alt="" style="position: absolute; right: -90px; top: -70px; width: 280px; height: 200px; mix-blend-mode: multiply; opacity: 0.7">
+    <div class="grain" style="position: absolute; inset: 0"></div>
+    <span style="position: relative; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #3E3A33"><span style="width: 6px; height: 6px; border-radius: 50%; background: #34507A"></span>Ready · Morning edition</span>
+    <span style="position: relative; font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.2">Where I Lived, and What I Lived For</span>
+    <span style="position: relative; font-size: 13px; color: #3E3A33">Walden, part 14 · 4 min</span>
+  </a>
+
+  <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 14px; border: 1px solid #E3DACA">
+    <span style="font-size: 12px; color: #5A554C">Next · 21:00, in 10 h</span>
+    <span style="font-family: Newsreader, Georgia, serif; font-size: 17px">The Brief — How honeybees choose a new home</span>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+  <div style="display: flex; flex-direction: column; border-top: 1px solid #E3DACA; padding-top: 6px">
+    <button type="button" style="text-align: left; height: 36px; padding: 0 8px; border-radius: 8px; border: 0; background: transparent; font: inherit; font-size: 14px; color: #23201B">Pause editions for today</button>
+    <a href="Main.dc.html" style="display: flex; align-items: center; height: 36px; padding: 0 8px; border-radius: 8px; text-decoration: none; font-size: 14px; color: #23201B">Open Folio</a>
+    <a href="Schedule.dc.html" style="display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 8px; border-radius: 8px; text-decoration: none; font-size: 14px; color: #23201B">Settings… <span style="font-size: 12px; color: #5A554C">⌘ ,</span></a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":360,"height":460}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

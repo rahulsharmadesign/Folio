@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Notebook</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; display: flex; background: #F6F1E7; position: relative; overflow: hidden; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; color: #23201B">
+  <dc-import name="Sidebar" active="notebook" hint-size="232px,800px"></dc-import>
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 64px 56px 40px 64px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 48px">
+    <div style="display: flex; flex-direction: column; gap: 26px; min-width: 0">
+      <header style="display: flex; flex-direction: column; gap: 8px">
+        <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 40px; line-height: 1.05; letter-spacing: -0.015em">Notebook</h1>
+        <p style="margin: 0; font-size: 15px; color: #5A554C">Your highlights, notes and reflections, in one quiet place.</p>
+      </header>
+      <div role="group" aria-label="Filter" style="display: flex; gap: 4px; padding: 4px; background: #EEE7D8; border-radius: 10px; align-self: flex-start">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+          <button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="height: 32px; padding: 0 14px; border-radius: 7px; border: 0; background: {{f.bg}}; color: {{f.color}}; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: {{f.shadow}}">{{f.label}}</button>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; border-top: 1px solid #E3DACA">
+        <sc-for list="{{items}}" as="it" hint-placeholder-count="4">
+          <article style="display: flex; flex-direction: column; gap: 8px; padding: 20px 0; border-bottom: 1px solid #E3DACA">
+            <p style="margin: 0; font-family: Literata, Georgia, serif; font-size: 18px; line-height: 1.5; font-style: {{it.style}}">{{it.text}}</p>
+            <div style="display: flex; gap: 10px; align-items: center; font-size: 13px; color: #5A554C">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: {{it.dot}}"></span>
+              <span>{{it.source}}</span>
+              <span aria-hidden="true">·</span>
+              <span>{{it.date}}</span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </div>
+
+    <aside style="display: flex; flex-direction: column; gap: 20px; padding-top: 6px">
+      <section aria-label="Resurfacing today" style="position: relative; overflow: hidden; border-radius: 16px; background: #F1EADC; border: 1px solid #E3DACA; padding: 24px 22px 20px; display: flex; flex-direction: column; gap: 14px">
+        <img src="../assets/wc-plum.png" alt="" style="position: absolute; right: -110px; top: -90px; width: 330px; height: 235px; mix-blend-mode: multiply; opacity: 0.55">
+        <div class="grain" style="position: absolute; inset: 0; pointer-events: none"></div>
+        <span style="position: relative; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #3E3A33">Resurfacing today</span>
+        <p style="position: relative; margin: 0; font-family: Literata, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.45">“The mass of men lead lives of quiet desperation.”</p>
+        <span style="position: relative; font-size: 13px; color: #3E3A33">Walden · Economy — highlighted 4 days ago</span>
+        <p style="position: relative; margin: 0; font-size: 13px; line-height: 1.5; color: #3E3A33">Keep it and it returns in two weeks, then a month — spaced so it sticks.</p>
+        <div style="position: relative; display: flex; gap: 8px; margin-top: 2px">
+          <button type="button" style="height: 40px; padding: 0 16px; border-radius: 10px; border: 0; background: #23201B; color: #F6F1E7; font: inherit; font-size: 13px; font-weight: 500">Keep</button>
+          <button type="button" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #CFC4AE; background: transparent; font: inherit; font-size: 13px; color: #23201B">Let it go</button>
+        </div>
+      </section>
+
+      <section aria-label="Ask your notebook" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 16px; border: 1px solid #E3DACA; background: #FBF8F2">
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #5A554C">Ask your notebook</span>
+        <label for="nb-ask" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask your notebook</label>
+        <input id="nb-ask" type="text" placeholder="What keeps coming up?" style="height: 42px; border: 1px solid #E0D6C3; border-radius: 10px; padding: 0 12px; background: #F6F1E7; font: inherit; font-size: 14px; color: #23201B">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <button type="button" style="text-align: left; min-height: 36px; padding: 0 10px; border-radius: 8px; border: 0; background: #F1EADC; font: inherit; font-size: 13px; color: #23201B">What connects my highlights this month?</button>
+          <button type="button" style="text-align: left; min-height: 36px; padding: 0 10px; border-radius: 8px; border: 0; background: #F1EADC; font: inherit; font-size: 13px; color: #23201B">Turn this week into a one-page digest</button>
+        </div>
+      </section>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'all' };
+  }
+  renderVals() {
+    const all = [
+      { kind: 'passage', text: 'Our life is frittered away by detail.', source: 'Walden · Where I Lived', date: 'Today', dot: '#587AA8', style: 'normal' },
+      { kind: 'reflection', text: 'Skip the second meeting; walk instead.', source: 'Your reflection on Walden', date: '24 Sep', dot: '#7C8C62', style: 'italic' },
+      { kind: 'brief', text: 'Mercator’s projection keeps angles true, not areas — which is why Greenland looks nearly as large as Africa.', source: 'The Brief · History of cartography', date: '19 Sep', dot: '#C0985A', style: 'normal' },
+      { kind: 'passage', text: 'The mass of men lead lives of quiet desperation.', source: 'Walden · Economy', date: '22 Sep', dot: '#587AA8', style: 'normal' }
+    ];
+    const f = this.state.filter;
+    const defs = [
+      { id: 'all', label: 'All' },
+      { id: 'passage', label: 'Passages' },
+      { id: 'brief', label: 'Briefs' },
+      { id: 'reflection', label: 'Reflections' }
+    ];
+    const filters = defs.map((d) => ({
+      ...d,
+      pressed: f === d.id ? 'true' : 'false',
+      bg: f === d.id ? '#FBF8F2' : 'transparent',
+      color: f === d.id ? '#23201B' : '#5A554C',
+      shadow: f === d.id ? '0 1px 2px rgba(60,48,30,0.12)' : 'none',
+      pick: () => this.setState({ filter: d.id })
+    }));
+    const items = f === 'all' ? all : all.filter((i) => i.kind === f);
+    return { filters, items };
+  }
+}
+</script>
+</body>
+</html>

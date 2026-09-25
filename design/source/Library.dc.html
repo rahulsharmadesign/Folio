@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio — Library</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;display=swap">
+<style>
+body{margin:0;font-family:Geist,'Helvetica Neue',Helvetica,sans-serif;color:#23201B;background:#F6F1E7}
+a{color:#34507A}a:hover{color:#243B5C}
+.grain{background-image:url(../assets/grain.png);background-size:320px 320px}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; display: flex; background: #F6F1E7; position: relative; overflow: hidden; font-family: Geist, 'Helvetica Neue', Helvetica, sans-serif; color: #23201B">
+  <dc-import name="Sidebar" active="library" hint-size="232px,800px"></dc-import>
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 64px 64px 40px; display: flex; flex-direction: column; gap: 34px">
+    <header style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h1 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 400; font-size: 40px; line-height: 1.05; letter-spacing: -0.015em">Library</h1>
+        <p style="margin: 0; font-size: 15px; color: #5A554C">Everything your editions draw from.</p>
+      </div>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: #23201B; color: #F6F1E7; font: inherit; font-size: 14px; font-weight: 500">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+        Add a book or feed
+      </button>
+    </header>
+
+    <section aria-labelledby="serials" style="display: flex; flex-direction: column; gap: 14px">
+      <h2 id="serials" style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Serials in progress</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+        <sc-for list="{{books}}" as="b" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="height: 156px; border-radius: 10px; position: relative; overflow: hidden; background: #F1EADC; border: 1px solid #E3DACA">
+              <img src="{{b.wash}}" alt="" style="position: absolute; left: -60px; top: -40px; width: 320px; height: 228px; mix-blend-mode: multiply; opacity: 0.8">
+              <div class="grain" style="position: absolute; inset: 0"></div>
+              <div style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; flex-direction: column; gap: 2px">
+                <span style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.1; color: #23201B">{{b.title}}</span>
+                <span style="font-size: 12px; color: #3E3A33">{{b.author}}</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #5A554C">
+              <span>{{b.status}}</span>
+              <span>{{b.when}}</span>
+            </div>
+            <div style="height: 2px; border-radius: 2px; background: #E3DACA; overflow: hidden">
+              <div style="height: 2px; width: {{b.pct}}; background: #34507A"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px">
+      <section aria-labelledby="pubs" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="pubs" style="margin: 0 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Publications &amp; feeds</h2>
+        <div style="display: flex; flex-direction: column; border-top: 1px solid #E3DACA">
+          <label style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-bottom: 1px solid #E3DACA">
+            <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Standard Ebooks</span><span style="font-size: 13px; color: #5A554C">Public-domain classics, carefully typeset</span></span>
+            <input type="checkbox" checked="{{ true }}" onChange="{{noop}}" style="width: 18px; height: 18px; accent-color: #34507A">
+          </label>
+          <label style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-bottom: 1px solid #E3DACA">
+            <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Project Gutenberg</span><span style="font-size: 13px; color: #5A554C">Essays, letters and speeches</span></span>
+            <input type="checkbox" checked="{{ true }}" onChange="{{noop}}" style="width: 18px; height: 18px; accent-color: #34507A">
+          </label>
+          <div style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-bottom: 1px solid #E3DACA">
+            <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Your uploads</span><span style="font-size: 13px; color: #5A554C">EPUB and PDF files from your Mac</span></span>
+            <a href="#uploads" style="font-size: 13px; font-weight: 500">Manage</a>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-bottom: 1px solid #E3DACA">
+            <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">RSS &amp; newsletters</span><span style="font-size: 13px; color: #5A554C">Long reads, trimmed to the best 2 pages</span></span>
+            <a href="#feeds" style="font-size: 13px; font-weight: 500">Add a feed</a>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="topics" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="topics" style="margin: 0 0 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #5A554C">Topics for the Brief</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{topics}}" as="t" hint-placeholder-count="5">
+            <button type="button" aria-pressed="{{t.pressed}}" onClick="{{t.toggle}}" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.bg}}; color: {{t.color}}; font: inherit; font-size: 13px; cursor: pointer">{{t.label}}</button>
+          </sc-for>
+          <button type="button" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px dashed #B9AE9A; background: transparent; color: #5A554C; font: inherit; font-size: 13px">+ Add a topic</button>
+        </div>
+        <p style="margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: #5A554C">Describe it in your own words, e.g. “why old maps got the world wrong”. The Brief picks one topic per edition and never repeats an angle.</p>
+        <label style="display: flex; align-items: center; gap: 14px; min-height: 54px; border-top: 1px solid #E3DACA; margin-top: 4px">
+          <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Surprise me once a week</span><span style="font-size: 13px; color: #5A554C">A topic you didn’t pick, chosen from what you’ve enjoyed</span></span>
+          <input type="checkbox" checked="{{ true }}" onChange="{{noop}}" style="width: 18px; height: 18px; accent-color: #34507A">
+        </label>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { on: { bees: true, maps: true, deep: true, joinery: false, lang: true } };
+  }
+  renderVals() {
+    const L = '../assets/wc-lapis.png';
+    const P = '../assets/wc-plum.png';
+    const R = '../assets/wc-rose.png';
+    const S = '../assets/wc-sage.png';
+    const books = [
+      { title: 'Walden', author: 'Henry David Thoreau', status: 'Part 14 of 62', when: 'Mornings', pct: '23%', wash: L },
+      { title: 'Meditations', author: 'Marcus Aurelius', status: 'Part 31 of 40', when: 'Sundays', pct: '78%', wash: P },
+      { title: 'Middlemarch', author: 'George Eliot', status: 'Part 6 of 180', when: 'Paused', pct: '3%', wash: R },
+      { title: 'On the Origin of Species', author: 'Charles Darwin', status: 'Up next', when: '', pct: '0%', wash: S }
+    ];
+    const defs = [
+      { id: 'bees', label: 'Collective behaviour' },
+      { id: 'maps', label: 'History of cartography' },
+      { id: 'deep', label: 'Deep-sea life' },
+      { id: 'joinery', label: 'Japanese joinery' },
+      { id: 'lang', label: 'How languages change' }
+    ];
+    const on = this.state.on;
+    const topics = defs.map((d) => {
+      const a = !!on[d.id];
+      return {
+        ...d,
+        pressed: a ? 'true' : 'false',
+        border: a ? '#23201B' : '#D6CCB8',
+        bg: a ? '#23201B' : 'transparent',
+        color: a ? '#F6F1E7' : '#23201B',
+        toggle: () => this.setState({ on: { ...on, [d.id]: !a } })
+      };
+    });
+    return { books, topics, noop: () => {} };
+  }
+}
+</script>
+</body>
+</html>
