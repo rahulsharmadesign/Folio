@@ -6,6 +6,8 @@ struct MenuBarView: View {
     @Environment(Theme.self) private var theme
     @Environment(AppState.self) private var app
     @Environment(\.openWindow) private var openWindow
+    /// The menu bar extra's own panel; `.window`-style extras don't close themselves after an action.
+    @State private var panel = PanelReference()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -32,9 +34,11 @@ struct MenuBarView: View {
         .padding(16)
         .frame(width: 360, height: 460)
         .background(theme.background)
+        .background(PanelReader(reference: panel))
     }
 
     private func open(_ route: Route) {
+        panel.window?.close()
         app.route = route
         openWindow(id: FolioApp.mainWindowID)
         NSApp.activate()
@@ -52,6 +56,26 @@ struct MenuBarView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+@MainActor
+private final class PanelReference {
+    weak var window: NSWindow?
+}
+
+/// Captures the window hosting the menu bar extra's content.
+private struct PanelReader: NSViewRepresentable {
+    let reference: PanelReference
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        Task { @MainActor in reference.window = view.window }
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        if let window = view.window { reference.window = window }
     }
 }
 
