@@ -65,7 +65,7 @@ struct EditionCard<Actions: View>: View {
         .foregroundStyle(badge.kind == .ready ? theme.ink : theme.ink2)
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
-        .background(theme.surface.opacity(0.86), in: Capsule())
+        .background(theme.surface.opacity(0.86), in: Capsule(style: .circular))
     }
 }
 

@@ -1,0 +1,8 @@
+The first paragraph of plain text
+wraps over a hard line break, as
+old text files do.
+
+The second paragraph has a hyphen-
+ated word across a line break.
+
+The third paragraph is short.

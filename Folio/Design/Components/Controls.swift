@@ -29,11 +29,12 @@ struct Chip: View {
                 .foregroundStyle(isSelected ? theme.primaryForeground : theme.ink)
                 .padding(.horizontal, 14)
                 .frame(height: 38)
-                .background(isSelected ? theme.primaryBackground : .clear, in: Capsule())
-                .overlay(Capsule().strokeBorder(isSelected ? theme.primaryBackground : theme.control, lineWidth: 1))
-                .contentShape(Capsule())
+                .background(isSelected ? theme.primaryBackground : .clear, in: Capsule(style: .circular))
+                .overlay { if !isSelected { Capsule(style: .circular).strokeBorder(theme.control, lineWidth: 1) } }
+                .contentShape(Capsule(style: .circular))
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
@@ -54,8 +55,8 @@ struct AddChip: View {
                 .foregroundStyle(theme.ink2)
                 .padding(.horizontal, 14)
                 .frame(height: 38)
-                .overlay(Capsule().strokeBorder(Self.dash, style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
-                .contentShape(Capsule())
+                .overlay(Capsule(style: .circular).strokeBorder(Self.dash, style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
+                .contentShape(Capsule(style: .circular))
         }
         .buttonStyle(.plain)
     }
@@ -66,10 +67,10 @@ struct SegmentedTabs<ID: Hashable>: View {
     @Environment(Theme.self) private var theme
     let options: [ID]
     @Binding var selection: ID
-    let title: (ID) -> String
     var height: CGFloat = 36
     var horizontalPadding: CGFloat = 16
     var fontSize: CGFloat = 14
+    let title: (ID) -> String
 
     /// `0 1px 2px rgba(60,48,30,0.12)` from the source.
     private static var raisedShadow: Color { RGBA(0x3C301E, 0.12).color }
@@ -107,6 +108,8 @@ struct SettingRow<Trailing: View>: View {
     @Environment(Theme.self) private var theme
     let title: String
     var meta: String?
+    /// Which edge carries the hairline (Library's "Surprise me" row has it on top).
+    var hairline: VerticalEdge = .bottom
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -119,22 +122,38 @@ struct SettingRow<Trailing: View>: View {
             trailing
         }
         .frame(minHeight: Tokens.Spacing.rowMinHeight)
-        .overlay(alignment: .bottom) { Rectangle().fill(theme.rule).frame(height: 1) }
+        .overlay(alignment: hairline == .bottom ? .bottom : .top) { Rectangle().fill(theme.rule).frame(height: 1) }
     }
 }
 
-/// The 18 pt accent checkbox the source uses for on/off rows.
+/// The 18 pt accent checkbox the source uses for on/off rows (`accent-color` on a native checkbox):
+/// filled accent with a white tick when on, a hairline box when off.
 struct FolioCheckbox: View {
     @Environment(Theme.self) private var theme
     let label: String
     @Binding var isOn: Bool
 
     var body: some View {
-        Toggle(label, isOn: $isOn)
-            .toggleStyle(.checkbox)
-            .labelsHidden()
-            .controlSize(.large)
-            .tint(theme.accentColor)
+        Button { isOn.toggle() } label: {
+            RoundedRectangle(cornerRadius: 3.5)
+                .fill(isOn ? theme.accentColor : theme.surface)
+                .overlay {
+                    if isOn {
+                        IconView(icon: .check, size: 14, strokeWidth: 3).foregroundStyle(.white)
+                    } else {
+                        RoundedRectangle(cornerRadius: 3.5).strokeBorder(theme.ink3, lineWidth: 1)
+                    }
+                }
+                .frame(width: 18, height: 18)
+                // A 44 pt hit target that lays out at 18 pt, like the source.
+                .padding(13)
+                .contentShape(Rectangle())
+                .padding(-13)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityAddTraits(.isToggle)
     }
 }
 
@@ -146,7 +165,7 @@ struct ProgressHairline: View {
     var fill: Color?
 
     var body: some View {
-        Capsule()
+        Capsule(style: .circular)
             .fill(theme.rule)
             .frame(width: width, height: 2)
             .frame(maxWidth: width == nil ? .infinity : nil)
@@ -157,8 +176,57 @@ struct ProgressHairline: View {
                         .frame(width: geo.size.width * min(max(progress, 0), 1), height: 2)
                 }
             }
-            .clipShape(Capsule())
+            .clipShape(Capsule(style: .circular))
             .accessibilityElement()
             .accessibilityValue(Text("\(Int((progress * 100).rounded())) percent"))
+    }
+}
+
+/// Range input in the style of the source's `accent-color` slider: a filled accent track and a round knob.
+struct FolioSlider: View {
+    @Environment(Theme.self) private var theme
+    @Binding var value: Double
+    var range: ClosedRange<Double>
+    var step: Double = 1
+    var onEditingChanged: (Bool) -> Void = { _ in }
+    @State private var dragging = false
+
+    private let knob: CGFloat = 16
+    private let track: CGFloat = 5
+
+    var body: some View {
+        GeometryReader { geo in
+            let span = max(1, geo.size.width - knob)
+            let fraction = (value - range.lowerBound) / max(0.0001, range.upperBound - range.lowerBound)
+            let x = CGFloat(fraction) * span
+            ZStack(alignment: .leading) {
+                Capsule(style: .circular).fill(theme.controlSoft).frame(height: track)
+                Capsule(style: .circular).fill(theme.accentColor).frame(width: x + knob / 2, height: track)
+                Circle().fill(theme.accentColor)
+                    .frame(width: knob, height: knob)
+                    .offset(x: x)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { g in
+                    if !dragging { dragging = true; onEditingChanged(true) }
+                    set(from: g.location.x - knob / 2, span: span)
+                }
+                .onEnded { _ in
+                    dragging = false
+                    onEditingChanged(false)
+                })
+        }
+        .frame(height: 24)
+        .accessibilityRepresentation {
+            Slider(value: $value, in: range, step: step) { editing in onEditingChanged(editing) }
+        }
+    }
+
+    private func set(from x: CGFloat, span: CGFloat) {
+        let raw = range.lowerBound + Double(min(max(0, x / span), 1)) * (range.upperBound - range.lowerBound)
+        let stepped = (raw / step).rounded() * step
+        if stepped != value { value = min(max(stepped, range.lowerBound), range.upperBound) }
     }
 }

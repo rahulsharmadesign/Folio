@@ -15,7 +15,7 @@ container_tmp=~/Library/Containers/app.folio.Folio/Data/tmp
 pkill -x Folio 2>/dev/null || true
 sleep 0.5
 # Forget the remembered window frame so it opens at the default 1280×800.
-defaults delete app.folio.Folio 2>/dev/null || true
+defaults read app.folio.Folio 2>/dev/null | grep -o '"NSWindow Frame [^"]*"' | tr -d '"' | while read -r key; do defaults delete app.folio.Folio "$key"; done
 rm -rf ~/Library/Containers/app.folio.Folio/Data/Library/Saved\ Application\ State 2>/dev/null || true
 
 if screencapture -x /tmp/.folio-probe.png 2>/dev/null; then

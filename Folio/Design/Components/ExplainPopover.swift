@@ -62,7 +62,7 @@ struct ExplainPopover: View {
             .padding(.bottom, 6)
 
             HStack(spacing: 10) {
-                TextField("Ask about this passage…", text: $question)
+                TextField("", text: $question, prompt: Text("Ask about this passage…").foregroundStyle(theme.ink3))
                     .textFieldStyle(.plain)
                     .uiText(14)
                     .foregroundStyle(theme.ink)

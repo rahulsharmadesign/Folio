@@ -3,7 +3,7 @@ import SwiftUI
 /// The thin-stroke icons from the design source, drawn from their SVG path data (viewBox 0 0 24 24).
 enum FolioIcon: String, CaseIterable, Sendable {
     case today, library, notebook, schedule, appearance
-    case arrowRight, chevronLeft, chevronDown, resurface, menu, highlight, bookmark, plus
+    case arrowRight, chevronLeft, chevronRight, chevronDown, check, resurface, menu, highlight, bookmark, plus
 
     /// Path data copied verbatim from design/source/*.dc.html.
     var paths: [String] {
@@ -15,7 +15,9 @@ enum FolioIcon: String, CaseIterable, Sendable {
         case .appearance: ["M12 3.5s6 6.4 6 10.8a6 6 0 0 1-12 0C6 9.9 12 3.5 12 3.5z", "M9.2 14.6a2.9 2.9 0 0 0 2.6 2.7"]
         case .arrowRight: ["M5 12h14", "M13 6l6 6-6 6"]
         case .chevronLeft: ["M15 6l-6 6 6 6"]
+        case .chevronRight: ["M9 6l6 6-6 6"]
         case .chevronDown: ["M6 9l6 6 6-6"]
+        case .check: ["M5 12.5l4.5 4.5L19 7.5"]
         case .resurface: ["M20 12a8 8 0 1 1-2.3-5.6", "M20 4v4.5h-4.5"]
         case .menu: ["M4 7h16", "M4 12h16", "M4 17h10"]
         case .highlight: ["M14.5 4.5l5 5L10 19H5v-5z", "M4 21h16"]

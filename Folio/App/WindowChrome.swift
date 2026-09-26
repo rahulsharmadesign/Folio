@@ -7,11 +7,14 @@ struct WindowChrome: NSViewRepresentable {
     /// Centre of the close button, from the window's top-left corner.
     var trafficLightCenter: CGPoint
     var background: NSColor
+    /// Hidden while reading in focus mode (03): only the page is on screen.
+    var showsTrafficLights = true
 
     func makeNSView(context: Context) -> NSView {
         let view = ChromeView()
         view.trafficLightCenter = trafficLightCenter
         view.background = background
+        view.showsTrafficLights = showsTrafficLights
         return view
     }
 
@@ -19,12 +22,14 @@ struct WindowChrome: NSViewRepresentable {
         guard let view = view as? ChromeView else { return }
         view.trafficLightCenter = trafficLightCenter
         view.background = background
+        view.showsTrafficLights = showsTrafficLights
         view.apply()
     }
 
     final class ChromeView: NSView {
         var trafficLightCenter = CGPoint(x: 26, y: 25)
         var background: NSColor = .windowBackgroundColor
+        var showsTrafficLights = true
         private var observers: [NSObjectProtocol] = []
 
         override func viewDidMoveToWindow() {
@@ -43,6 +48,12 @@ struct WindowChrome: NSViewRepresentable {
         }
 
         func apply() {
+            place()
+            // AppKit lays the title bar out again after it grows; place the buttons once more after that.
+            DispatchQueue.main.async { [weak self] in self?.place() }
+        }
+
+        private func place() {
             guard let window else { return }
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
@@ -64,6 +75,8 @@ struct WindowChrome: NSViewRepresentable {
             let buttons: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
             for (i, type) in buttons.enumerated() {
                 guard let button = window.standardWindowButton(type), let parent = button.superview else { continue }
+                button.animator().alphaValue = showsTrafficLights ? 1 : 0
+                button.isEnabled = showsTrafficLights
                 // 20 pt between centres, as in the mockups (12 pt lights, 8 pt gaps).
                 let centerX = trafficLightCenter.x + CGFloat(i) * 20
                 let yFromTop = trafficLightCenter.y

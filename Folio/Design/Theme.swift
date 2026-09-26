@@ -80,10 +80,15 @@ struct TypeStyle: Sendable {
     var color: InkRole? = nil
 }
 
-/// The app-wide look: theme, accent and font families. Appearance (M5) edits this.
+/// The app-wide look: accent and font families everywhere; the paper theme (Paper, Sage, Mist, Dusk)
+/// on reading surfaces. The rest of the chrome stays on Paper, which is the only palette the tokens
+/// define completely. Appearance (10) edits this through `Preferences`.
 @MainActor @Observable
 final class Theme {
+    /// App chrome (sidebar, screens).
     var palette: Palette = Tokens.paper
+    /// Reader, Brief, Edition complete and the Appearance preview.
+    var reading: Palette = Tokens.paper
     var accent: Accent = Tokens.accentInk
     var displayFamily: String = Tokens.displayFamilyDefault
     var readingFamily: String = Tokens.readingFamilyDefault
@@ -123,6 +128,9 @@ final class Theme {
     var primaryBackground: Color { Tokens.primaryButtonBackground.color }
     var primaryForeground: Color { Tokens.primaryButtonForeground.color }
     var highlight: Color { Tokens.highlightFill.color }
+
+    /// Increase Contrast applies to the reading palette too.
+    var readingInk3: Color { (increaseContrast ? reading.ink2 : reading.ink3).color }
 
     func ink(_ role: InkRole) -> Color {
         switch role {

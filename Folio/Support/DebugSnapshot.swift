@@ -9,7 +9,7 @@ enum DebugSnapshot {
     static func scheduleIfRequested() {
         guard let name = UserDefaults.standard.string(forKey: "FolioSnapshot") else { return }
         Task { @MainActor in
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(UserDefaults.standard.double(forKey: "FolioSnapshotDelay") > 0 ? UserDefaults.standard.double(forKey: "FolioSnapshotDelay") : 3))
             guard let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width >= 1000 }),
                   let frameView = window.contentView?.superview else { NSApp.terminate(nil); return }
             let bounds = frameView.bounds
