@@ -9,7 +9,7 @@ struct ScheduleView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 56) {
             VStack(alignment: .leading, spacing: 26) {
-                ScreenHeader(title: "Schedule", subtitle: "When editions arrive, and how long they are.")
+                ScreenHeader(title: "Schedule", subtitle: "When Briefs arrive, what kind, and how long they are.")
                 ScheduleEditor()
                 LengthSection()
                 RulesSection()
@@ -47,7 +47,7 @@ struct ScheduleEditor: View {
                     Button {
                         let last = app.prefs.slots.last?.hour ?? 12
                         app.prefs.slots.append(ScheduleSlot(id: "custom-\(UUID().uuidString.prefix(6))", hour: min(23, last + 2), minute: 0,
-                                                            content: .passage, weekdays: ScheduleSlot.everyDay))
+                                                            content: .mix, weekdays: ScheduleSlot.everyDay))
                     } label: {
                         Text("+ Add a delivery").uiText(13).foregroundStyle(theme.ink2)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -70,7 +70,8 @@ struct ScheduleEditor: View {
 private struct SlotRow: View {
     @Environment(AppState.self) private var app
     @Environment(Theme.self) private var theme
-    @Query(sort: \Work.addedAt) private var works: [Work]
+    @Query(sort: \NewsFeed.createdAt) private var feeds: [NewsFeed]
+    @Query(sort: \FavoriteQuote.createdAt) private var quotes: [FavoriteQuote]
     @Binding var slot: ScheduleSlot
     var canRemove: Bool
     var remove: () -> Void
@@ -149,15 +150,13 @@ private struct SlotRow: View {
 
     private var detail: String {
         switch slot.content {
-        case .passage: currentWork.map { "Next part of \($0.title)" } ?? "The next part of your serial"
-        case .brief: "A topic from your list, with sources"
-        case .passageAndBrief: "One page of your serial, then a short Brief"
-        case .publication: "Best of your feeds, trimmed"
+        case .mix: "A story, a quote, the news or a topic — a different one each day"
+        case .story: "A real person or moment, from Wikipedia"
+        case .quote:
+            quotes.contains { $0.explainedAt == nil } ? "The next of your favourite quotes, explained" : "A well-known quote, explained"
+        case .news: "The day’s most significant stories from \(feeds.count) feed\(feeds.count == 1 ? "" : "s"), linked"
+        case .topic: "A topic from your list, with sources"
         }
-    }
-
-    private var currentWork: Work? {
-        works.first { $0.isCurrent && $0.status == .active } ?? works.first { $0.status == .active }
     }
 
     private var timeBinding: Binding<Date> {
@@ -191,7 +190,6 @@ private struct LengthSection: View {
                     self.draft = nil
                     guard limit != app.prefs.editionLimit else { return }
                     app.prefs.editionLimit = limit
-                    app.library.rechunkUnread(limit: limit)
                 }
             }
             .accessibilityLabel("Edition length")
@@ -273,9 +271,11 @@ private struct YourDay: View {
 
     private func wash(for content: SlotContent) -> String {
         switch content {
-        case .passage, .passageAndBrief: "wc-lapis"
-        case .brief: "wc-ochre"
-        case .publication: "wc-sage"
+        case .mix: "wc-lapis"
+        case .story: "wc-rose"
+        case .quote: "wc-plum"
+        case .news: "wc-sage"
+        case .topic: "wc-ochre"
         }
     }
 }

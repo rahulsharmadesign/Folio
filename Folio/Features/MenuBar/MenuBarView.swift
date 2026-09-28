@@ -55,9 +55,7 @@ struct MenuBarView: View {
     }
 
     private func target(for edition: Edition) -> ReadingTarget? {
-        if let brief = edition.brief { return .brief(brief, edition) }
-        if let part = edition.part { return .passage(part, edition) }
-        return nil
+        edition.brief.map { .brief($0, edition) }
     }
 
     private func readyCard(_ edition: Edition, target: ReadingTarget) -> some View {
@@ -66,12 +64,12 @@ struct MenuBarView: View {
         let title: String
         let meta: String
         switch target {
-        case .passage(let part, _):
-            title = part.chapterTitle.isEmpty ? (part.work?.title ?? "") : part.chapterTitle
-            meta = "\(part.work?.title ?? ""), part \(part.index + 1) · \(ReadingTime.minutes(part.charCount)) min"
+        case .book(let window):
+            title = window.work.title
+            meta = window.work.progressLabel
         case .brief(let brief, _):
             title = brief.title
-            meta = "The Brief · \(ReadingTime.minutes(brief.charCount)) min"
+            meta = "The Brief · \(brief.kind == .topic ? "" : brief.kind.label.lowercased() + " · ")\(ReadingTime.minutes(brief.charCount)) min"
         }
         return Button {
             panel.window?.close()
@@ -106,13 +104,8 @@ struct MenuBarView: View {
     private func nextCard(_ next: SlotOccurrence) -> some View {
         let time = SchedulePlanner.timeLabel(next.date)
         let title: String
-        switch next.slot.content {
-        case .brief:
-            let unread = try? app.library.context.fetch(FetchDescriptor<Brief>(predicate: #Predicate { $0.readAt == nil })).first
-            title = "The Brief — " + (unread?.title ?? "a topic from your list")
-        default:
-            title = app.library.currentWork.map { w in "\(w.title), part \(w.nextPartIndex + 1)" } ?? "Your next passage"
-        }
+        let kind = app.scheduler.briefKind(for: next)
+        title = "The Brief — " + (app.scheduler.unreadBrief(of: kind)?.title ?? kind.label.lowercased())
         return VStack(alignment: .leading, spacing: 4) {
             Text("Next · \(time), \(SchedulePlanner.inLabel(next.date, now: app.now))").uiText(12).foregroundStyle(theme.ink2)
             Text(title).displayText(17).foregroundStyle(theme.ink).lineLimit(2)

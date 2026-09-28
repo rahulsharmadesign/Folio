@@ -130,6 +130,18 @@ enum TextNormalizer {
             .filter { !$0.isEmpty }
     }
 
+    /// PDFKit breaks the line around curly quotes it drew as separate runs (`I’⏎ve`, `we⏎’re`, `mad,⏎”`), and
+    /// leaves presentation-form ligatures in. Join those breaks and spell the ligatures out.
+    static func repairPDFText(_ page: String) -> String {
+        var s = page
+        for (ligature, letters) in [("\u{FB00}", "ff"), ("\u{FB01}", "fi"), ("\u{FB02}", "fl"), ("\u{FB03}", "ffi"), ("\u{FB04}", "ffl")] {
+            s = s.replacingOccurrences(of: ligature, with: letters)
+        }
+        // Before the quote first (`else⏎’⏎s`), then after it.
+        s = s.replacingOccurrences(of: "[ \\t]*\\r?\\n(?=[’”])", with: "", options: .regularExpression)
+        return s.replacingOccurrences(of: "([’'])[ \\t]*\\r?\\n(?=\\p{Ll})", with: "$1", options: .regularExpression)
+    }
+
     /// PDF pages (`PDFPage.string`): drop running headers/footers and page numbers, fix hyphenation across
     /// line breaks, and rebuild paragraphs from wrapped lines.
     static func paragraphs(fromPDFPages pages: [String]) -> [String] {

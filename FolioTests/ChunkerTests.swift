@@ -155,3 +155,29 @@ struct ImporterTests {
         #expect(Chunker.chunk(book.chapters).allSatisfy { $0.text.count <= 2200 })
     }
 }
+
+struct PDFRepairTests {
+    @Test func curlyQuoteLineBreaksAreJoined() {
+        let raw = "life I’\nve lived. It’\ns\nnot so. Unconsciously, we\n’re all acting.\n“I went mad,\n” he said."
+        #expect(TextNormalizer.repairPDFText(raw) == "life I’ve lived. It’s\nnot so. Unconsciously, we’re all acting.\n“I went mad,” he said.")
+        #expect(TextNormalizer.repairPDFText("imitation of somebody else\n’\ns life with perfection.") == "imitation of somebody else’s life with perfection.")
+    }
+
+    @Test func aQuoteEndingAParagraphStaysAnEnding() {
+        let paragraphs = TextNormalizer.paragraphs(fromPDFPages: [TextNormalizer.repairPDFText("He said “stop.”\nThe next day began.")])
+        #expect(paragraphs.count >= 1)
+        #expect(!paragraphs.joined().contains("’ve"))
+    }
+
+    @Test @MainActor func unmappedLigaturesBecomeRealWords() {
+        let words: Set<String> = ["different", "benefits", "find", "office"]
+        var cache: [String: String] = [:]
+        let fixed = LigatureRepair.repair("di\u{0}erent bene\u{0}ts, \u{0}nd the o\u{0}ce", isWord: { words.contains($0) }, cache: &cache)
+        #expect(fixed == "different benefits, find the office")
+    }
+
+    @Test @MainActor func theSpellCheckerKnowsCommonLigatureWords() {
+        var cache: [String: String] = [:]
+        #expect(LigatureRepair.repair("di\u{0}erent \u{0}nd", cache: &cache) == "different find")
+    }
+}

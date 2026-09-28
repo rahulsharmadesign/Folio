@@ -65,15 +65,64 @@ enum Prompts {
         return AIRequest(system: system, prompt: prompt, maxTokens: 2000)
     }
 
-    static func briefWrite(topic: String, angle: String, sources: [RetrievedSource], limit: Int, feedback: String?) -> AIRequest {
+    static func storyAngle(past: [String]) -> AIRequest {
         let system = """
-        You write "The Brief": a short, calm article for a reading app. Use ONLY facts stated in the numbered sources below — nothing from memory. If the sources don't support a claim, leave it out.
-        Write a title (under 60 characters), a one-sentence standfirst, and a body of 3–6 short paragraphs separated by blank lines. Title, standfirst and body together must be \(limit) characters or fewer. Plain prose; use *asterisks* only for the occasional italic term. No headings, lists or links.
-        Reply with JSON only: {"title": "...", "standfirst": "...", "body": "...", "sources": [numbers of the sources you actually used]}
+        You plan a short, true, motivating story for a daily reading app: a real person or moment of courage, persistence, invention or kindness. Range across eras, countries and fields, and don't only pick the famous. Choose one that hasn't been covered, and a Wikipedia search query likely to find its main article. Reply with JSON only: {"angle": "who or what, and what they faced, in one line", "query": "..."}
         """
-        var prompt = "Topic: \(topic)\nAngle: \(angle)\n\n"
+        var prompt = "Pick today's story.\n"
+        if !past.isEmpty { prompt += "Already covered (avoid these): \(past.suffix(40).joined(separator: "; "))\n" }
+        return AIRequest(system: system, prompt: prompt, maxTokens: 2000)
+    }
+
+    static func quotePerson(past: [String]) -> AIRequest {
+        let system = """
+        Choose a person whose English Wikiquote page is likely to hold a memorable, uplifting or thought-provoking quote: a writer, scientist, leader, artist, athlete or thinker. Vary eras, countries and fields. Reply with JSON only: {"person": "their name, as titled on Wikiquote"}
+        """
+        var prompt = "Pick today's person.\n"
+        if !past.isEmpty { prompt += "Quotes and people already covered (avoid these): \(past.suffix(40).joined(separator: "; "))\n" }
+        return AIRequest(system: system, prompt: prompt, maxTokens: 2000)
+    }
+
+    static func briefWrite(_ r: BriefRequest, angle: String, sources: [RetrievedSource], limit: Int, feedback: String?) -> AIRequest {
+        let grounding = "Use ONLY facts stated in the numbered sources below — nothing from memory. If the sources don't support a claim, leave it out."
+        let task: String
+        var fields = #""title": "...", "standfirst": "...", "body": "...", "sources": [numbers of the sources you actually used]"#
+        switch r.kind {
+        case .topic:
+            task = "You write \"The Brief\": a short, calm article for a reading app. \(grounding)"
+        case .story:
+            task = """
+            You write \"The Brief\": a short, true, motivating story for a reading app, about the person or moment below: what they faced, what they did, and what came of it. Tell it as a story, warm but without clichés or sermonising, and end on what a reader might take from it. \(grounding)
+            """
+        case .quote where r.quote.isEmpty:
+            task = """
+            You write \"The Brief\": a short piece explaining one quote. Choose one memorable quote that appears word for word in the Wikiquote source. Say who said it and in what context, using only facts from the sources. Then explain what it means and how it might apply to an ordinary day; this interpretation may be your own. The standfirst is the quote itself in curly quotes, then — and the speaker.
+            """
+            fields = #""quote": "the exact words, copied from the source", "# + fields
+        case .quote:
+            task = """
+            You write \"The Brief\": a short piece explaining a quote the reader loves. Say who said it and in what context, using only facts from the numbered sources, nothing from memory; if the sources don't say where it comes from, say so plainly rather than guess. Then explain what it means and how it might apply to an ordinary day; this interpretation may be your own. The standfirst is the quote itself in curly quotes, then — and the speaker if the sources name one.
+            """
+        case .news:
+            task = """
+            You write \"The Brief\": a calm digest of the most significant technology news for a reading app. From the numbered news items below, pick the 3–4 that matter most and give each its own short paragraph: what happened and why it matters, naming the publication. Skip deals, rumours and product promotions unless they matter. \(grounding) The title sums up the day; the standfirst says what the digest covers.
+            """
+        }
+        let system = """
+        \(task)
+        Write a title (under 60 characters), a one-sentence standfirst, and a body of 3–6 short paragraphs separated by blank lines. Title, standfirst and body together must be \(limit) characters or fewer. Plain prose; use *asterisks* only for the occasional italic term. No headings, lists or links.
+        Reply with JSON only: {\(fields)}
+        """
+        var prompt: String
+        switch r.kind {
+        case .topic: prompt = "Topic: \(r.topic)\nAngle: \(angle)\n\n"
+        case .story: prompt = "Story: \(angle)\n\n"
+        case .quote where r.quote.isEmpty: prompt = "Person: \(angle)\n\n"
+        case .quote: prompt = "Quote: \(r.quote)\n" + (r.author.isEmpty ? "" : "The reader says it's by: \(r.author)\n") + "\n"
+        case .news: prompt = "Date: \(r.date.formatted(date: .complete, time: .omitted))\n\n"
+        }
         for (i, s) in sources.enumerated() {
-            prompt += "Source \(i + 1): \(s.title) (\(s.url))\n\(s.text)\n\n"
+            prompt += "Source \(i + 1): \(s.title) — \(s.publisher) (\(s.url))\n\(s.text)\n\n"
         }
         if let feedback { prompt += "Your previous attempt was rejected: \(feedback) Fix it.\n" }
         return AIRequest(system: system, prompt: prompt, maxTokens: 16000)

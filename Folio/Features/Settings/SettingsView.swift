@@ -59,7 +59,7 @@ private struct AISettingsPane: View {
                 ForEach(AIFeature.allCases) { feature in
                     Picker(feature.title, selection: Binding(
                         get: { ai.settings.overrides[feature.rawValue] },
-                        set: { ai.settings.overrides[feature.rawValue] = $0; app.scheduler.briefFailed = false })) {
+                        set: { ai.settings.overrides[feature.rawValue] = $0; app.scheduler.retryBriefs() })) {
                         Text("Same as default").tag(ProviderKind?.none)
                         ForEach(ProviderKind.allCases) { kind in Text(kind.title).tag(ProviderKind?.some(kind)) }
                     }

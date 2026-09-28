@@ -4,9 +4,19 @@ import Observation
 import ServiceManagement
 import SwiftData
 
+/// A run of consecutive parts of a book, laid out together in the reader (SPEC › Reader).
+struct BookWindow {
+    var work: Work
+    var range: ClosedRange<Int>
+    /// Opened from Library or Today, not paged into: show "Previously" on top.
+    var showsRecap = false
+    /// Paged back into from the next window: start on the last page.
+    var startsAtEnd = false
+}
+
 /// What the reader is showing.
 enum ReadingTarget {
-    case passage(Part, Edition?)
+    case book(BookWindow)
     case brief(Brief, Edition?)
 }
 
@@ -90,10 +100,13 @@ final class AppState {
     func start() async {
         guard !started else { return }
         started = true
-        await library.seedSamplesIfNeeded(limit: prefs.editionLimit, force: isSnapshot)
+        await library.seedSamplesIfNeeded(limit: Chunker.defaultLimit, force: isSnapshot)
+        library.seedFeedsIfNeeded(force: isSnapshot)
+        await library.refreshImportedPDFsIfNeeded(limit: Chunker.defaultLimit)
+        scheduler.retirePassageEditions()
         scheduler.touch()
-        if route == .reader, reading == nil, let part = library.currentWork?.nextPart {
-            reading = .passage(part, nil) // -FolioRoute reader
+        if route == .reader, reading == nil, let work = library.currentWork {
+            readBook(work) // -FolioRoute reader
         }
         scheduler.refresh(prefs: prefs, now: now)
         scheduler.scheduleNotifications(prefs: prefs)
@@ -130,24 +143,27 @@ final class AppState {
         route = target.isBrief ? .brief : .reader
     }
 
-    /// Opens the next part of a serial right now (Library tile).
-    func readNext(of work: Work) {
-        guard let part = work.nextPart else { return }
-        read(.passage(part, nil))
+    /// Opens a book where the reader stopped, with "Previously" on top (Library tile, Today).
+    func readBook(_ work: Work) {
+        guard work.partCount > 0 else { return }
+        let start = min(max(0, work.nextPartIndex), work.partCount - 1)
+        guard let range = BookWindows.forward(from: start, chapters: work.sortedParts.map(\.chapterTitle)) else { return }
+        read(.book(BookWindow(work: work, range: range, showsRecap: start > 0)))
     }
 
-    func finishPassage(_ part: Part, edition: Edition?) {
-        scheduler.finish(part: part, edition: edition)
-        let slotName = edition.flatMap { e in prefs.slots.first { $0.id == e.slotID }?.editionName } ?? SchedulePlanner.editionName(at: now)
-        finished = FinishedEdition(part: part, edition: edition, slotName: slotName)
-        route = .editionEnd
+    func startOver(_ work: Work) {
+        work.nextPartIndex = 0
+        work.status = .active
+        for part in work.parts { part.readAt = nil }
+        library.save()
+        readBook(work)
     }
 
     func importFiles(_ urls: [URL]) {
         Task {
             var last: Work?
             for url in urls {
-                if let w = await library.importFile(at: url, limit: prefs.editionLimit) { last = w }
+                if let w = await library.importFile(at: url, limit: Chunker.defaultLimit) { last = w }
             }
             if last != nil {
                 route = .library
@@ -165,15 +181,10 @@ final class AppState {
     }
 
     func detail(for content: SlotContent) -> String {
-        let work = library.currentWork?.title
+        guard content == .topic else { return content.title }
+        // One line in the sidebar card: long topics fall back to just "The Brief".
         let topic = library.topics().first { $0.isActive }?.label.lowercased()
-        switch content {
-        case .passage, .publication: return work.map { "Passage · \($0)" } ?? "Passage"
-        case .brief:
-            // One line in the sidebar card: long topics fall back to just "The Brief".
-            return topic.flatMap { $0.count <= 16 ? "The Brief · \($0)" : nil } ?? "The Brief"
-        case .passageAndBrief: return work.map { "\($0) + The Brief" } ?? "Passage + The Brief"
-        }
+        return topic.flatMap { $0.count <= 16 ? "The Brief · \($0)" : nil } ?? "The Brief"
     }
 }
 

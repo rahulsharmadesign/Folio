@@ -22,10 +22,12 @@ final class Work {
     /// "Mornings", "Sundays" — from the slot that serves it.
     var cadenceHint: String
     var addedAt: Date
-    /// Index of the next unread part. Parts before it have been read.
+    /// The reading position: the part to resume at. Parts before it have been read; `partCount` means finished.
     var nextPartIndex: Int
-    /// The serial the passage slots draw from.
+    /// Legacy (serial editions); no longer read.
     var isCurrent: Bool
+    /// Last time a page of this book was turned; the most recent one is "Continue reading".
+    var lastReadAt: Date?
     @Relationship(deleteRule: .cascade, inverse: \Part.work) var parts: [Part] = []
 
     init(title: String, author: String, kind: WorkKind = .book, source: WorkSource, fileName: String?, coverWash: String) {
@@ -55,7 +57,14 @@ final class Work {
 
     func part(at index: Int) -> Part? { parts.first { $0.index == index } }
     var nextPart: Part? { part(at: nextPartIndex) }
-    var progress: Double { partCount == 0 ? 0 : Double(nextPartIndex) / Double(partCount) }
+    var progress: Double { partCount == 0 ? 0 : min(1, Double(nextPartIndex) / Double(partCount)) }
+    var isFinished: Bool { status == .finished || (partCount > 0 && nextPartIndex >= partCount) }
+    /// "34% read", "Not started", "Finished"
+    var progressLabel: String {
+        if isFinished { return "Finished" }
+        if nextPartIndex == 0 { return "Not started" }
+        return "\(max(1, Int((progress * 100).rounded())))% read"
+    }
 }
 
 @Model
@@ -101,6 +110,57 @@ final class Topic {
     }
 }
 
+/// What a Brief is about (SPEC › What it is).
+enum BriefKind: String, Codable, CaseIterable, Sendable {
+    case story, quote, news, topic
+
+    /// The kicker on the card and in the reader.
+    var label: String {
+        switch self {
+        case .story: "A true story"
+        case .quote: "A quote, explained"
+        case .news: "Tech news"
+        case .topic: "Your topics"
+        }
+    }
+}
+
+@Model
+final class FavoriteQuote {
+    @Attribute(.unique) var id: UUID
+    var text: String
+    /// Who said it, if the user knows.
+    var author: String
+    var createdAt: Date
+    var explainedAt: Date?
+    /// No source could be found for it, so it was skipped.
+    var unsourced: Bool
+
+    init(text: String, author: String) {
+        id = UUID()
+        self.text = text
+        self.author = author
+        createdAt = .now
+        unsourced = false
+    }
+}
+
+@Model
+final class NewsFeed {
+    @Attribute(.unique) var id: UUID
+    var url: String
+    /// The feed's own title once fetched, else the host.
+    var title: String
+    var createdAt: Date
+
+    init(url: String, title: String) {
+        id = UUID()
+        self.url = url
+        self.title = title
+        createdAt = .now
+    }
+}
+
 struct BriefSource: Codable, Hashable, Sendable {
     var title: String
     var url: String
@@ -119,9 +179,15 @@ final class Brief {
     var createdAt: Date
     var readAt: Date?
     var isSample: Bool
+    var kindRaw: String = BriefKind.topic.rawValue
+    /// The quote explained, or the angle taken, so later Briefs don't repeat it.
+    var subject: String = ""
 
-    init(topicLabel: String, title: String, standfirst: String, body: String, sources: [BriefSource], isSample: Bool = false) {
+    init(kind: BriefKind = .topic, topicLabel: String, title: String, standfirst: String, body: String, sources: [BriefSource],
+         subject: String = "", isSample: Bool = false) {
         id = UUID()
+        kindRaw = kind.rawValue
+        self.subject = subject
         self.topicLabel = topicLabel
         self.title = title
         self.standfirst = standfirst
@@ -131,6 +197,7 @@ final class Brief {
         self.isSample = isSample
     }
 
+    var kind: BriefKind { BriefKind(rawValue: kindRaw) ?? .topic }
     var sources: [BriefSource] { (try? JSONDecoder().decode([BriefSource].self, from: sourcesData)) ?? [] }
     var charCount: Int { title.count + standfirst.count + body.count }
 }
@@ -230,5 +297,6 @@ final class Reflection {
 }
 
 enum FolioSchema {
-    static let models: [any PersistentModel.Type] = [Work.self, Part.self, Topic.self, Brief.self, Edition.self, Highlight.self, Reflection.self]
+    static let models: [any PersistentModel.Type] = [Work.self, Part.self, Topic.self, Brief.self, Edition.self, Highlight.self, Reflection.self,
+                                                  FavoriteQuote.self, NewsFeed.self]
 }

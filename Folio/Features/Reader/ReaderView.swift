@@ -1,7 +1,8 @@
 import SwiftData
 import SwiftUI
 
-/// The paged reader for passages (03, 03b, 04) and Briefs (06, 06b).
+/// The paged reader for books (03, 03b, 04) and Briefs (06, 06b). Books page straight through: past either
+/// end of the laid-out window the reader moves to the next or previous one, saving the position as it goes.
 struct ReaderView: View {
     @Environment(AppState.self) private var app
     @Environment(Theme.self) private var theme
@@ -21,6 +22,7 @@ struct ReaderView: View {
     @State private var monitor: Any?
     @State private var swipeX: CGFloat = 0
     @State private var briefFeedback: BriefFeedback?
+    @State private var cache = BookTextCache()
 
     private struct Selection: Equatable {
         var range: NSRange
@@ -63,7 +65,10 @@ struct ReaderView: View {
         var cssShift: CGFloat
         var totalCharacters: Int
         var sourceID: UUID?
-        var partIndex: Int?
+        /// Books: the window runs to the end of its chapter (long chapters are split into sections).
+        var endsChapter = true
+        /// Books: where each part's text starts, in part order.
+        var partStarts: [(index: Int, offset: Int)] = []
         var kind: HighlightKind
         var sourceTitle: String
         var sourceDetail: String
@@ -78,39 +83,49 @@ struct ReaderView: View {
 
     private func content(size: CGSize) -> Content? {
         switch app.reading {
-        case .passage(let part, _):
-            guard let work = part.work else { return nil }
-            let recap = part.index > 0 ? part.recap : nil
-            let text = ReaderText.passage(part.text, recap: recap, style: style)
-            let bodyOffset = text.length - (part.text as NSString).length
-            let chapter = part.chapterTitle.isEmpty ? work.title : part.chapterTitle
+        case .book(let window):
+            let work = window.work
+            let chapters = cache.chapters(for: work)
+            guard let first = work.part(at: window.range.lowerBound) else { return nil }
+            let built = cache.window(window, style: style) {
+                let parts = window.range.compactMap { work.part(at: $0) }
+                let recap = window.showsRecap && first.index > 0 ? first.recap : nil
+                let chapterStart = first.index == 0 || chapters[first.index - 1] != first.chapterTitle
+                return ReaderText.book(parts.map(\.text), recap: recap, chapterStart: chapterStart, style: style)
+            }
+            let chapter = first.chapterTitle.isEmpty ? work.title : first.chapterTitle
+            let isLastWindow = window.range.upperBound >= work.partCount - 1
             return Content(
-                text: text, bodyOffset: bodyOffset, top: 124, footerHeight: 72,
+                text: built.text, bodyOffset: 0, top: 124, footerHeight: 72,
                 runningHead: chapter,
-                footerLeft: "\(work.title) · part \(part.index + 1) of \(work.partCount)",
+                footerLeft: "\(work.title) · \(work.progressLabel)",
                 controlsTitle: work.title,
-                controlsSubtitle: "\(chapter) · part \(part.index + 1) of \(work.partCount)",
-                trailerReserve: 118,
+                controlsSubtitle: "\(chapter) · \(work.progressLabel)",
+                trailerReserve: isLastWindow ? 118 : 0,
                 cssShift: ReaderText.cssShift(style: style, lineHeight: 1.66),
-                totalCharacters: part.charCount,
-                sourceID: work.id, partIndex: part.index, kind: .passage, sourceTitle: work.title, sourceDetail: chapter,
-                workContext: .init(title: work.title, author: work.author, chapter: part.chapterTitle),
-                plainText: part.text)
+                totalCharacters: built.text.length,
+                sourceID: work.id,
+                endsChapter: window.range.upperBound + 1 >= chapters.count || chapters[window.range.upperBound + 1] != first.chapterTitle,
+                partStarts: zip(window.range, built.starts).map { ($0, $1) },
+                kind: .passage, sourceTitle: work.title, sourceDetail: chapter,
+                workContext: .init(title: work.title, author: work.author, chapter: first.chapterTitle),
+                plainText: "")
         case .brief(let brief, let edition):
-            let text = ReaderText.brief(kicker: brief.topicLabel, title: brief.title, standfirst: brief.standfirst, body: brief.body, style: style)
-            let bodyLength = ReaderText.body(brief.body, style: style, lineHeight: 1.6, gapEm: 1, smallCapsOpening: false, italicMarkup: true).length
+            let body = BriefParagraphs.ensure(brief.body)
+            let text = ReaderText.brief(kicker: brief.topicLabel, title: brief.title, standfirst: brief.standfirst, body: body, style: style)
+            let bodyLength = ReaderText.body(body, style: style, lineHeight: 1.6, gapEm: 1, smallCapsOpening: false, italicMarkup: true).length
             let slot = edition.flatMap { e in app.prefs.slots.first { $0.id == e.slotID } }
             let n = CGFloat(brief.sources.count)
             return Content(
                 text: text, bodyOffset: text.length - bodyLength, top: 108, footerHeight: 64,
                 runningHead: "The Brief · \(slot?.editionName ?? SchedulePlanner.editionName(at: brief.createdAt))",
-                footerLeft: "The Brief · topic: \(brief.topicLabel.lowercased())",
+                footerLeft: brief.kind == .topic ? "The Brief · topic: \(brief.topicLabel.lowercased())" : "The Brief · \(brief.kind.label.lowercased())",
                 controlsTitle: "The Brief",
                 controlsSubtitle: brief.title,
-                trailerReserve: 26 + 1 + 16 + 16 + 12 + n * 21 + max(0, n - 1) * 4 + 18 + 40 + 8,
+                trailerReserve: 26 + 1 + 16 + 16 + 12 + n * 21 + max(0, n - 1) * 4 + (brief.kind == .topic ? 18 + 40 : 0) + 8,
                 cssShift: ReaderText.cssShift(style: style, lineHeight: 1.6),
                 totalCharacters: brief.charCount,
-                sourceID: brief.id, partIndex: nil, kind: .brief, sourceTitle: "The Brief", sourceDetail: brief.topicLabel,
+                sourceID: brief.id, kind: .brief, sourceTitle: "The Brief", sourceDetail: brief.topicLabel,
                 workContext: .init(title: brief.title, author: "", chapter: ""),
                 plainText: brief.body)
         case nil:
@@ -119,6 +134,8 @@ struct ReaderView: View {
     }
 
     private var pageCount: Int { max(1, layout.ranges.count) }
+    /// `page` can briefly run past the end while a window paged back into is laid out.
+    private var shownPage: Int { min(page, pageCount - 1) }
     private var isLastPage: Bool { page >= pageCount - 1 }
     private var palette: Palette { theme.reading }
 
@@ -144,6 +161,7 @@ struct ReaderView: View {
                 onLayout: { new in
                     layout = new
                     page = min(page, max(0, new.ranges.count - 1))
+                    recordPosition(c)
                 },
                 onSelect: { range, rect in select(range, rect: rect, content: c) },
                 onDeselect: { if selection != nil, question.isEmpty { closeExplain() } }
@@ -181,6 +199,7 @@ struct ReaderView: View {
         }
         .onChange(of: page) { _, new in
             closeExplain()
+            recordPosition(c)
             if new >= pageCount - 1, case .brief(let brief, let edition) = app.reading, brief.readAt == nil {
                 app.scheduler.finish(brief: brief, edition: edition)
             }
@@ -203,7 +222,7 @@ struct ReaderView: View {
 
     private func focusHeader(_ c: Content, width: CGFloat) -> some View {
         HStack {
-            backButton(color: theme.readingInk3, size: 13)
+            backButton(color: theme.readingInk3, size: 13, kind: c.kind)
             Spacer()
             Text(c.runningHead).displayText(15, italic: true).foregroundStyle(theme.readingInk3).lineLimit(1)
             Spacer()
@@ -227,7 +246,7 @@ struct ReaderView: View {
     private func focusFooter(_ c: Content, width: CGFloat) -> some View {
         HStack(spacing: 0) {
             Text(c.footerLeft).frame(maxWidth: .infinity, alignment: .leading)
-            ProgressHairline(progress: Double(page + 1) / Double(pageCount), width: 140, fill: palette.ink2.color)
+            ProgressHairline(progress: Double(shownPage + 1) / Double(pageCount), width: 140, fill: palette.ink2.color)
                 .environment(readingTheme)
                 .frame(maxWidth: .infinity)
             Text(pageLabel(c, long: false)).frame(maxWidth: .infinity, alignment: .trailing)
@@ -252,22 +271,28 @@ struct ReaderView: View {
 
     private func pageLabel(_ c: Content, long: Bool) -> String {
         let remaining = charactersRemaining(c)
-        if long { return remaining < Int(ReadingTime.charactersPerMinute) ? "Under a minute left" : "\(ReadingTime.minutes(remaining)) min left in edition" }
-        let pages = "Page \(page + 1) of \(pageCount)"
+        if long {
+            let span = c.kind == .brief ? "edition" : c.endsChapter ? "chapter" : "section"
+            return remaining < Int(ReadingTime.charactersPerMinute) ? "Under a minute left" : "\(ReadingTime.minutes(remaining)) min left in \(span)"
+        }
+        let pages = "Page \(shownPage + 1) of \(pageCount)"
         if c.kind == .brief, isLastPage { return pages }
         return pages + " · " + ReadingTime.leftLabel(remaining)
     }
 
     private func charactersRemaining(_ c: Content) -> Int {
-        guard layout.ranges.indices.contains(page) else { return c.totalCharacters }
-        return max(0, c.text.length - layout.ranges[page].location)
+        guard layout.ranges.indices.contains(shownPage) else { return c.totalCharacters }
+        return max(0, c.text.length - layout.ranges[shownPage].location)
     }
 
-    private func backButton(color: Color, size: CGFloat) -> some View {
-        Button { app.route = .today } label: {
+    /// Books go back to Library, Briefs to Today.
+    private var backRoute: Route { app.reading?.isBrief == false ? .library : .today }
+
+    private func backButton(color: Color, size: CGFloat, kind: HighlightKind) -> some View {
+        Button { app.route = backRoute } label: {
             HStack(spacing: 6) {
                 IconView(icon: .chevronLeft, size: 16, strokeWidth: 1.6)
-                Text("Today").uiText(size)
+                Text(kind == .brief ? "Today" : "Library").uiText(size)
             }
             .foregroundStyle(color)
             .padding(.horizontal, 8)
@@ -287,10 +312,10 @@ struct ReaderView: View {
         ZStack {
             HStack(spacing: 14) {
                 Color.clear.frame(width: 68, height: 14) // the system traffic lights
-                Button { app.route = .today } label: {
+                Button { app.route = backRoute } label: {
                     HStack(spacing: 6) {
                         IconView(icon: .chevronLeft, size: 16, strokeWidth: 1.6)
-                        Text("Today").uiText(14)
+                        Text(c.kind == .brief ? "Today" : "Library").uiText(14)
                     }
                     .foregroundStyle(palette.ink.color)
                     .padding(.horizontal, 10)
@@ -306,7 +331,7 @@ struct ReaderView: View {
                     toolButton("Highlight", active: selection != nil) {
                         IconView(icon: .highlight, size: 19, strokeWidth: 1.5)
                     } action: { saveHighlight(c, note: nil) }
-                    if case .passage(let part, _) = app.reading {
+                    if let part = currentPart(c) {
                         toolButton(part.isBookmarked ? "Remove bookmark" : "Bookmark", active: false) {
                             IconShape(icon: .bookmark)
                                 .fill(part.isBookmarked ? palette.ink.color : .clear)
@@ -350,11 +375,11 @@ struct ReaderView: View {
 
     private func controlsFooter(_ c: Content, width: CGFloat) -> some View {
         HStack(spacing: 24) {
-            Text("Page \(page + 1) of \(pageCount)").fixedSize()
-            FolioSlider(value: Binding(get: { Double(page) }, set: { page = Int($0.rounded()) }), range: 0...Double(max(1, pageCount - 1)))
+            Text("Page \(shownPage + 1) of \(pageCount)").fixedSize()
+            FolioSlider(value: Binding(get: { Double(shownPage) }, set: { page = Int($0.rounded()) }), range: 0...Double(max(1, pageCount - 1)))
                 .environment(readingTheme)
                 .disabled(pageCount < 2)
-                .accessibilityLabel("Position in edition")
+                .accessibilityLabel(c.kind == .brief ? "Position in edition" : "Position in chapter")
             Text(pageLabel(c, long: true)).fixedSize()
             HStack(spacing: 4) {
                 sizeButton(smaller: true)
@@ -396,11 +421,12 @@ struct ReaderView: View {
     @ViewBuilder
     private func trailer(_ c: Content) -> some View {
         switch app.reading {
-        case .passage(let part, let edition):
+        case .book(let window):
+            // Only the last window of a book has a trailer.
             VStack(spacing: 18) {
                 Text("· · ·").displayText(18, tracking: 0.6).foregroundStyle(theme.readingInk3).accessibilityHidden(true)
-                Button { app.finishPassage(part, edition: edition) } label: {
-                    Text("Finish this edition").uiText(14, weight: 500).foregroundStyle(palette.ink.color)
+                Button { finishBook(window.work) } label: {
+                    Text("Finish the book").uiText(14, weight: 500).foregroundStyle(palette.ink.color)
                         .padding(.horizontal, 20).frame(height: 44)
                         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(palette.rule.color, lineWidth: 1))
                         .contentShape(Rectangle())
@@ -427,17 +453,7 @@ struct ReaderView: View {
                 }
                 .uiText(13, lineHeight: 1.55)
                 .foregroundStyle(palette.ink2.color)
-                HStack(spacing: 8) {
-                    Button(briefFeedback == .deeper ? "Going deeper tomorrow" : "Go deeper tomorrow") { feedback(.deeper, brief: brief) }
-                        .buttonStyle(.primaryCompact)
-                    Button("More like this") { feedback(.more, brief: brief) }
-                        .buttonStyle(SecondaryButtonStyle(height: 40, horizontalPadding: 14, fontSize: 13, weight: 400))
-                        .opacity(briefFeedback == .less ? 0.5 : 1)
-                    Button("Less like this") { feedback(.less, brief: brief) }
-                        .buttonStyle(.quiet)
-                        .opacity(briefFeedback == .more ? 0.5 : 1)
-                }
-                .padding(.top, 6)
+                if brief.kind == .topic { topicFeedback(brief) }
             }
             .environment(readingTheme)
             .padding(.top, 16)
@@ -446,6 +462,30 @@ struct ReaderView: View {
         case nil:
             EmptyView()
         }
+    }
+
+    /// "Go deeper tomorrow" and More/Less steer a topic; other kinds have no topic to steer.
+    private func topicFeedback(_ brief: Brief) -> some View {
+        HStack(spacing: 8) {
+            Button(briefFeedback == .deeper ? "Going deeper tomorrow" : "Go deeper tomorrow") { feedback(.deeper, brief: brief) }
+                .buttonStyle(.primaryCompact)
+            Button("More like this") { feedback(.more, brief: brief) }
+                .buttonStyle(SecondaryButtonStyle(height: 40, horizontalPadding: 14, fontSize: 13, weight: 400))
+                .opacity(briefFeedback == .less ? 0.5 : 1)
+            Button("Less like this") { feedback(.less, brief: brief) }
+                .buttonStyle(.quiet)
+                .opacity(briefFeedback == .more ? 0.5 : 1)
+        }
+        .padding(.top, 6)
+    }
+
+    private func finishBook(_ work: Work) {
+        work.nextPartIndex = work.partCount
+        work.status = .finished
+        work.lastReadAt = .now
+        for part in work.parts where part.readAt == nil { part.readAt = .now }
+        try? context.save()
+        app.route = .library
     }
 
     private func feedback(_ kind: BriefFeedback, brief: Brief) {
@@ -463,8 +503,43 @@ struct ReaderView: View {
     // MARK: Paging & input
 
     private func turn(_ delta: Int) {
-        let next = min(max(page + delta, 0), pageCount - 1)
-        if next != page { page = next }
+        let next = shownPage + delta
+        if next >= 0, next < pageCount {
+            page = next
+            return
+        }
+        // Past either end of a book's window: lay out the next or previous one.
+        guard case .book(let window) = app.reading, !layout.ranges.isEmpty else { return }
+        let chapters = cache.chapters(for: window.work)
+        if next < 0, window.range.lowerBound > 0, let range = BookWindows.backward(to: window.range.lowerBound - 1, chapters: chapters) {
+            page = .max / 2 // clamped to the last page once laid out
+            app.reading = .book(BookWindow(work: window.work, range: range, startsAtEnd: true))
+        } else if next >= pageCount, window.range.upperBound + 1 < chapters.count,
+                  let range = BookWindows.forward(from: window.range.upperBound + 1, chapters: chapters) {
+            page = 0
+            app.reading = .book(BookWindow(work: window.work, range: range))
+        }
+    }
+
+    // MARK: Position
+
+    /// The part the shown page is in.
+    private func currentPart(_ c: Content) -> Part? {
+        guard case .book(let window) = app.reading else { return nil }
+        let location = layout.ranges.indices.contains(shownPage) ? layout.ranges[shownPage].location : 0
+        return BookWindows.part(at: location, offsets: c.partStarts).flatMap { window.work.part(at: $0) }
+    }
+
+    /// Every page turn saves where the reader is, so the book reopens there.
+    private func recordPosition(_ c: Content) {
+        guard case .book(let window) = app.reading, !window.work.isFinished, let part = currentPart(c),
+              window.range.contains(part.index) else { return }
+        let work = window.work
+        guard work.nextPartIndex != part.index || work.lastReadAt.map({ Date.now.timeIntervalSince($0) > 60 }) ?? true else { return }
+        work.nextPartIndex = part.index
+        work.lastReadAt = .now
+        for p in window.range.lowerBound..<part.index { if let earlier = work.part(at: p), earlier.readAt == nil { earlier.readAt = .now } }
+        try? context.save()
     }
 
     private func installMonitor() {
@@ -483,7 +558,7 @@ struct ReaderView: View {
                 case 123: turn(-1); return nil // ←
                 case 124, 49: turn(1); return nil // →, space
                 case 53: // esc
-                    if selection != nil { closeExplain() } else { app.route = .today }
+                    if selection != nil { closeExplain() } else { app.route = backRoute }
                     return nil
                 default: return event
                 }
@@ -538,8 +613,12 @@ struct ReaderView: View {
 
     private func highlightRanges(_ c: Content) -> [NSRange] {
         guard let id = c.sourceID else { return [] }
-        return highlights.filter { $0.workID == id && $0.partIndex == c.partIndex }
-            .map { NSRange(location: $0.rangeLocation + c.bodyOffset, length: $0.rangeLength) }
+        let starts = Dictionary(c.partStarts.map { ($0.index, $0.offset) }, uniquingKeysWith: { a, _ in a })
+        return highlights.filter { $0.workID == id }
+            .compactMap { h -> NSRange? in
+                let base = c.kind == .brief ? (h.partIndex == nil ? c.bodyOffset : nil) : h.partIndex.flatMap { starts[$0] }
+                return base.map { NSRange(location: $0 + h.rangeLocation, length: h.rangeLength) }
+            }
             .filter { NSMaxRange($0) <= c.text.length }
     }
 
@@ -547,9 +626,12 @@ struct ReaderView: View {
         guard let selection else { return }
         let text = (c.text.string as NSString).substring(with: selection.range).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        let range = NSRange(location: max(0, selection.range.location - c.bodyOffset), length: selection.range.length)
+        // Books: stored against the part the selection starts in, so it survives the window changing.
+        let partIndex = c.kind == .brief ? nil : BookWindows.part(at: selection.range.location, offsets: c.partStarts)
+        let base = partIndex.flatMap { i in c.partStarts.first { $0.index == i }?.offset } ?? c.bodyOffset
+        let range = NSRange(location: max(0, selection.range.location - base), length: selection.range.length)
         context.insert(Highlight(text: text, kind: c.kind, sourceTitle: c.sourceTitle, sourceDetail: c.sourceDetail,
-                                 workID: c.sourceID, partIndex: c.partIndex, range: range, note: note))
+                                 workID: c.sourceID, partIndex: partIndex, range: range, note: note))
         try? context.save()
         closeExplain()
     }
@@ -584,7 +666,7 @@ struct ReaderView: View {
     private func runAsk(_ c: Content) {
         let q = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return }
-        stream(Prompts.ask(q, passage: c.plainText, work: c.workContext))
+        stream(Prompts.ask(q, passage: currentPart(c)?.text ?? c.plainText, work: c.workContext))
     }
 
     private func stream(_ request: AIRequest) {
@@ -633,18 +715,52 @@ struct ReaderView: View {
 
     // MARK: "Previously"
 
+    private var recapPart: Part? {
+        guard case .book(let window) = app.reading, window.showsRecap else { return nil }
+        return window.work.part(at: window.range.lowerBound)
+    }
+
     private var recapKey: String {
-        if case .passage(let part, _) = app.reading { return "\(part.persistentModelID.hashValue)-\(part.recap == nil)" }
-        return "none"
+        recapPart.map { "\($0.persistentModelID.hashValue)-\($0.recap == nil)" } ?? "none"
     }
 
     private func loadRecap() async {
-        guard case .passage(let part, _) = app.reading, part.index > 0, part.recap == nil,
+        guard let part = recapPart, part.index > 0, part.recap == nil,
               let work = part.work, let previous = work.part(at: part.index - 1),
               let provider = await app.ai.availableProvider(for: .recap) else { return }
         let request = Prompts.recap(previousPart: previous.text, work: .init(title: work.title, author: work.author, chapter: previous.chapterTitle))
         guard let text = try? await provider.complete(request), !Task.isCancelled else { return }
         part.recap = Prompts.clampRecap(text)
         try? context.save()
+    }
+}
+
+/// Books: the laid-out text of the current window and each work's chapter list, built once rather than on
+/// every render (the reader re-renders on every mouse move while its controls show).
+@MainActor
+final class BookTextCache {
+    private var textKey = ""
+    private var textValue: (text: NSAttributedString, starts: [Int])?
+    private var chaptersKey = ""
+    private var chaptersValue: [String] = []
+
+    func window(_ window: BookWindow, style: ReaderText.Style, build: () -> (text: NSAttributedString, starts: [Int])) -> (text: NSAttributedString, starts: [Int]) {
+        let recap = window.showsRecap ? window.work.part(at: window.range.lowerBound)?.recap ?? "" : ""
+        let key = [window.work.id.uuidString, "\(window.range)", recap, style.readingFamily, style.uiFamily, "\(style.size)",
+                   style.ink.description, style.ink2.description].joined(separator: "|")
+        if key != textKey || textValue == nil {
+            textValue = build()
+            textKey = key
+        }
+        return textValue!
+    }
+
+    func chapters(for work: Work) -> [String] {
+        let key = "\(work.id)-\(work.partCount)"
+        if key != chaptersKey {
+            chaptersValue = work.sortedParts.map(\.chapterTitle)
+            chaptersKey = key
+        }
+        return chaptersValue
     }
 }

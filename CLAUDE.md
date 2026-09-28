@@ -1,6 +1,6 @@
 # Folio: instructions for Claude Code
 
-Folio is a native macOS reading app: short, scheduled editions (2,200 characters or less) from the user's own EPUB/PDF books and AI-written, sourced Briefs, in a calm e-ink/paper design. Read these before any work:
+Folio is a native macOS reading app: the user's own EPUB/PDF books, read freely with the position remembered, plus short, scheduled editions (2,200 characters or less) of AI-written, sourced Briefs (true stories, quotes explained, tech news, topics), in a calm e-ink/paper design. Read these before any work:
 
 1. `docs/SPEC.md`: product, architecture, data model, AI layer.
 2. `design/DESIGN.md`: design principles, screen inventory, components.
@@ -24,7 +24,7 @@ Folio is a native macOS reading app: short, scheduled editions (2,200 characters
 
 - Swift 6 strict concurrency, SwiftUI first, AppKit only for the paged text view and window chrome.
 - XcodeGen: edit `project.yml`, never the `.xcodeproj`.
-- The app must work fully with AI switched off. AI goes through the `AIProvider` protocol; never call a vendor SDK from a view.
+- Books must work fully with AI switched off. Editions are AI Briefs, so with AI off there are none, and the app says so plainly. AI goes through the `AIProvider` protocol; never call a vendor SDK from a view.
 - Secrets live in the Keychain only. Never log user text or keys.
 - Sandbox-safe file access (security-scoped bookmarks). Never read outside what the user picked.
 - The Chunker, importers and scheduler have unit tests. Run the tests before each commit.

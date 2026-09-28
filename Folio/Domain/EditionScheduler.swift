@@ -12,9 +12,11 @@ final class EditionScheduler {
     private var context: ModelContext { library.context }
     /// Bumped on every change so views that read editions refresh.
     private(set) var version = 0
-    private var generatingBrief = false
-    /// The last pipeline run produced nothing; fall back to a passage until a topic or setting changes.
-    var briefFailed = false
+    private var generating: BriefKind?
+    /// Kinds whose last pipeline run produced nothing, and when; retried after `retryAfter`
+    /// or when topics, quotes or feeds change.
+    private var failedAt: [BriefKind: Date] = [:]
+    static let retryAfter: TimeInterval = 30 * 60
 
     init(library: LibraryStore, ai: AIService) {
         self.library = library
@@ -38,8 +40,39 @@ final class EditionScheduler {
         return (try? context.fetch(d))?.first { $0.scheduledFor <= now }
     }
 
-    func edition(for occurrence: SlotOccurrence, kind: EditionKind) -> Edition? {
-        editions(on: occurrence.date).first { $0.slotID == occurrence.slot.id && $0.kind == kind }
+    func edition(for occurrence: SlotOccurrence) -> Edition? {
+        editions(on: occurrence.date).first { $0.slotID == occurrence.slot.id && $0.kind == .brief }
+    }
+
+    /// The kind of Brief a delivery brings; "Your topics" needs an active topic, else it's a story.
+    func briefKind(for occurrence: SlotOccurrence) -> BriefKind {
+        let kind = occurrence.slot.content.briefKind(on: occurrence.date, hour: occurrence.slot.hour)
+        if kind == .topic, !library.topics().contains(where: { $0.isActive && $0.weight > 0.2 }) { return .story }
+        return kind
+    }
+
+    /// An unread Brief of this kind that no edition has used yet: what the next delivery of it will be.
+    func unreadBrief(of kind: BriefKind) -> Brief? {
+        let d = FetchDescriptor<Brief>(predicate: #Predicate { $0.readAt == nil }, sortBy: [SortDescriptor(\.createdAt)])
+        let used = Set(((try? context.fetch(FetchDescriptor<Edition>())) ?? []).compactMap { $0.brief?.id })
+        return ((try? context.fetch(d)) ?? []).first { $0.kind == kind && !used.contains($0.id) }
+    }
+
+    /// Topics, quotes or feeds changed: try every kind again.
+    func retryBriefs() {
+        failedAt.removeAll()
+        version += 1
+    }
+
+    /// Stores from before editions were Briefs-only: unread passage editions are retired.
+    func retirePassageEditions() {
+        let passage = EditionKind.passage.rawValue, read = EditionState.read.rawValue, replaced = EditionState.replaced.rawValue
+        let old = (try? context.fetch(FetchDescriptor<Edition>(predicate: #Predicate {
+            $0.kindRaw == passage && $0.stateRaw != read && $0.stateRaw != replaced
+        }))) ?? []
+        guard !old.isEmpty else { return }
+        for e in old { e.state = .replaced }
+        library.save()
     }
 
     /// Signals that library content changed outside the scheduler (imports, samples).
@@ -51,14 +84,10 @@ final class EditionScheduler {
     func refresh(prefs: Preferences, now: Date = .now) {
         guard !prefs.isPaused(at: now) else { return }
         var changed = false
-        for occurrence in SchedulePlanner.due(at: now, slots: prefs.slots) {
-            for kind in kinds(for: occurrence.slot.content) {
-                if let existing = edition(for: occurrence, kind: kind) {
-                    changed = repair(existing) || changed
-                } else if let created = prepare(occurrence, kind: kind) {
-                    context.insert(created)
-                    changed = true
-                }
+        for occurrence in SchedulePlanner.due(at: now, slots: prefs.slots) where edition(for: occurrence) == nil {
+            if let created = prepare(occurrence, limit: prefs.editionLimit, now: now) {
+                context.insert(created)
+                changed = true
             }
         }
         // Prepared → ready at slot time.
@@ -79,53 +108,19 @@ final class EditionScheduler {
         }
     }
 
-    private func kinds(for content: SlotContent) -> [EditionKind] {
-        switch content {
-        case .passage, .publication: [.passage] // Feeds aren't supported yet; publications fall back to the serial.
-        case .brief: [.brief]
-        case .passageAndBrief: [.passage, .brief]
+    private func prepare(_ occurrence: SlotOccurrence, limit: Int, now: Date) -> Edition? {
+        let kind = briefKind(for: occurrence)
+        if let brief = unreadBrief(of: kind) {
+            return Edition(slotID: occurrence.slot.id, scheduledFor: occurrence.date, kind: .brief, brief: brief)
         }
-    }
-
-    private func prepare(_ occurrence: SlotOccurrence, kind: EditionKind) -> Edition? {
-        switch kind {
-        case .passage:
-            guard let part = nextPart() else { return nil }
-            return Edition(slotID: occurrence.slot.id, scheduledFor: occurrence.date, kind: .passage, part: part)
-        case .brief:
-            if let brief = unreadBrief() {
-                return Edition(slotID: occurrence.slot.id, scheduledFor: occurrence.date, kind: .brief, brief: brief)
-            }
-            if ai.isEnabled(.brief), !briefFailed {
-                generateBriefInBackground() // The next refresh picks the new Brief up.
-                return nil
-            }
-            // No Brief (AI off, or no sources): deliver a passage instead.
-            return nextPart().map { Edition(slotID: occurrence.slot.id, scheduledFor: occurrence.date, kind: .passage, part: $0) }
+        // With AI off there are no editions (SPEC › Scheduling); Today says so.
+        if ai.isEnabled(.brief), failedAt[kind].map({ now.timeIntervalSince($0) > Self.retryAfter }) ?? true {
+            generateBriefInBackground(kind, limit: limit) // The next refresh picks the new Brief up.
         }
+        return nil
     }
 
-    /// A prepared passage whose part vanished (re-chunked) gets the current next part.
-    private func repair(_ edition: Edition) -> Bool {
-        guard edition.kind == .passage, edition.part == nil, edition.state != .read else { return false }
-        edition.part = nextPart()
-        return true
-    }
-
-    private func nextPart() -> Part? {
-        guard let work = library.currentWork else { return nil }
-        if let part = work.nextPart { return part }
-        work.status = .finished
-        return library.currentWork?.nextPart
-    }
-
-    private func unreadBrief() -> Brief? {
-        let d = FetchDescriptor<Brief>(predicate: #Predicate { $0.readAt == nil }, sortBy: [SortDescriptor(\.createdAt)])
-        let used = Set(((try? context.fetch(FetchDescriptor<Edition>())) ?? []).compactMap { $0.brief?.id })
-        return ((try? context.fetch(d)) ?? []).first { !used.contains($0.id) }
-    }
-
-    /// Unread editions from earlier slots become `replaced`; their part simply stays next in line.
+    /// Unread editions from earlier slots become `replaced`.
     private func replaceOlder(than newest: Date) -> Bool {
         let all = (try? context.fetch(FetchDescriptor<Edition>())) ?? []
         let ids = Set(SchedulePlanner.toReplace(all.map { ($0.id, $0.scheduledFor, $0.state) }, newestReady: newest))
@@ -134,18 +129,6 @@ final class EditionScheduler {
     }
 
     // MARK: Reading
-
-    /// Finishing a passage advances the serial.
-    func finish(part: Part, edition: Edition?) {
-        part.readAt = .now
-        if let work = part.work, work.nextPartIndex <= part.index {
-            work.nextPartIndex = part.index + 1
-            if work.nextPart == nil { work.status = .finished }
-        }
-        edition?.state = .read
-        library.save()
-        version += 1
-    }
 
     func finish(brief: Brief, edition: Edition?) {
         brief.readAt = .now
@@ -156,26 +139,73 @@ final class EditionScheduler {
 
     // MARK: The Brief
 
-    /// Runs the pipeline for the best-weighted active topic and stores the result.
-    func generateBriefInBackground() {
-        guard !generatingBrief, ai.isEnabled(.brief) else { return }
-        let topics = library.topics().filter { $0.isActive && $0.weight > 0.2 }
-        guard let topic = Self.pickTopic(topics) else { return }
-        generatingBrief = true
-        let label = topic.label, past = topic.pastAngles, deeper = topic.deeperAngle
+    /// Gathers what the pipeline needs for `kind`, runs it off the main thread, and stores the Brief.
+    func generateBriefInBackground(_ kind: BriefKind, limit: Int) {
+        guard generating == nil, ai.isEnabled(.brief) else { return }
+        let past = pastBriefs(of: kind)
+        var request = BriefRequest(kind: kind, past: past.map(\.subject).filter { !$0.isEmpty } + past.map(\.title))
+        let topic = kind == .topic ? Self.pickTopic(library.topics().filter { $0.isActive && $0.weight > 0.2 }) : nil
+        let quote = kind == .quote ? library.quotes().first { $0.explainedAt == nil } : nil
+        switch kind {
+        case .topic:
+            guard let topic else { return }
+            request.topic = topic.label
+            request.past = topic.pastAngles
+            request.deeper = topic.deeperAngle
+        case .quote:
+            request.quote = quote?.text ?? ""
+            request.author = quote?.author ?? ""
+        case .news:
+            request.feeds = library.feeds().map(\.url)
+            request.seenLinks = Set(past.flatMap { $0.sources.map(\.url) })
+            guard !request.feeds.isEmpty else { return }
+        case .story:
+            break
+        }
+        generating = kind
+        let job = request
+        let label = kind == .topic ? request.topic : kind.label
         Task {
-            defer { generatingBrief = false }
-            guard let provider = await ai.availableProvider(for: .brief),
-                  let draft = try? await BriefPipeline.run(topic: label, pastAngles: past, deeper: deeper, provider: provider) else {
-                briefFailed = true
+            defer { generating = nil }
+            guard let provider = await ai.availableProvider(for: .brief) else {
+                failedAt[kind] = .now
                 return
             }
-            topic.pastAngles.append(draft.angle)
-            topic.deeperAngle = nil
-            context.insert(Brief(topicLabel: label, title: draft.title, standfirst: draft.standfirst, body: draft.body, sources: draft.sources))
+            let draft: DraftBrief?
+            do {
+                draft = try await BriefPipeline.run(job, limit: limit, provider: provider)
+            } catch {
+                failedAt[kind] = .now // Offline or the provider failed: try again later.
+                return
+            }
+            guard let draft else {
+                // Nothing to ground it in. A reader's quote with no source is set aside so the next one gets a turn.
+                if let quote {
+                    quote.explainedAt = .now
+                    quote.unsourced = true
+                    library.save()
+                } else {
+                    failedAt[kind] = .now
+                }
+                version += 1
+                return
+            }
+            topic?.pastAngles.append(draft.angle)
+            topic?.deeperAngle = nil
+            quote?.explainedAt = .now
+            context.insert(Brief(kind: kind, topicLabel: label, title: draft.title, standfirst: draft.standfirst, body: draft.body,
+                                 sources: draft.sources, subject: draft.subject))
             library.save()
             version += 1
         }
+    }
+
+    /// Recent Briefs of a kind, newest first, to avoid repeating angles, quotes or news items.
+    private func pastBriefs(of kind: BriefKind) -> [Brief] {
+        let raw = kind.rawValue
+        var d = FetchDescriptor<Brief>(predicate: #Predicate { $0.kindRaw == raw }, sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        d.fetchLimit = 60
+        return (try? context.fetch(d)) ?? []
     }
 
     /// Weighted, deterministic pick: the topic with the highest weight whose last Brief is oldest.
@@ -200,7 +230,7 @@ final class EditionScheduler {
         for slot in prefs.slots {
             let content = UNMutableNotificationContent()
             content.title = "Your \(slot.editionName.lowercased()) is ready"
-            content.body = slot.content == .brief ? "The Brief, a few minutes long." : "A few minutes of reading, waiting for you."
+            content.body = "\(slot.content == .mix ? "The Brief" : slot.content.title), a few minutes long."
             content.sound = .default
             for weekday in slot.weekdays {
                 var components = DateComponents()

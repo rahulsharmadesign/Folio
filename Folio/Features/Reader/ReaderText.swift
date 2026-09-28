@@ -15,13 +15,21 @@ enum ReaderText {
 
     // MARK: Passage (03)
 
-    /// `recap` shows as "Previously" on page 1.
-    static func passage(_ text: String, recap: String?, style: Style) -> NSAttributedString {
+    /// A run of consecutive parts of a book, one after another. `recap` shows as "Previously" on page 1;
+    /// the small-caps opening only where a chapter starts. Returns where each part's text starts.
+    static func book(_ parts: [String], recap: String?, chapterStart: Bool, style: Style) -> (text: NSAttributedString, starts: [Int]) {
         let out = NSMutableAttributedString()
         if let recap, !recap.isEmpty { out.append(previously(recap, style: style)) }
-        let body = body(text, style: style, lineHeight: 1.66, gapEm: 0.9, smallCapsOpening: true)
-        out.append(body)
-        return out
+        var starts: [Int] = []
+        for (i, text) in parts.enumerated() {
+            if i > 0, out.length > 0 {
+                // End the previous part's last paragraph, keeping its paragraph style (and gap).
+                out.append(NSAttributedString(string: "\n", attributes: out.attributes(at: out.length - 1, effectiveRange: nil)))
+            }
+            starts.append(out.length)
+            out.append(body(text, style: style, lineHeight: 1.66, gapEm: 0.9, smallCapsOpening: i == 0 && chapterStart, indentFirst: i > 0))
+        }
+        return (out, starts)
     }
 
     /// CSS half-leading for the body line box: draw this much higher so glyphs sit where CSS puts them.
@@ -48,7 +56,8 @@ enum ReaderText {
     }
 
     /// Body paragraphs: the first unindented (with an optional small-caps opening), the rest indented 1.4em.
-    static func body(_ text: String, style: Style, lineHeight: CGFloat, gapEm: CGFloat, smallCapsOpening: Bool, italicMarkup: Bool = false) -> NSAttributedString {
+    static func body(_ text: String, style: Style, lineHeight: CGFloat, gapEm: CGFloat, smallCapsOpening: Bool, italicMarkup: Bool = false,
+                     indentFirst: Bool = false) -> NSAttributedString {
         let paragraphs = smartQuotes(text).components(separatedBy: "\n\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         let out = NSMutableAttributedString()
         let font = Fonts.nsFont(family: style.readingFamily, size: style.size)
@@ -58,7 +67,7 @@ enum ReaderText {
             p.minimumLineHeight = lineHeight * style.size
             p.maximumLineHeight = lineHeight * style.size
             p.paragraphSpacing = gapEm * style.size
-            p.firstLineHeadIndent = i == 0 ? 0 : 1.4 * style.size
+            p.firstLineHeadIndent = i == 0 && !indentFirst ? 0 : 1.4 * style.size
             p.lineBreakStrategy = []
             p.hyphenationFactor = 0.2
             let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: style.ink, .paragraphStyle: p]

@@ -24,16 +24,17 @@ final class LibraryStore {
         (try? context.fetch(FetchDescriptor<Work>(sortBy: [SortDescriptor(\.addedAt)]))) ?? []
     }
 
-    /// The serial passage slots draw from: the one marked current, else the oldest active one.
+    /// The book to continue: the unfinished one read most recently, else the newest one added.
     var currentWork: Work? {
-        let all = works()
-        return all.first { $0.isCurrent && $0.status == .active } ?? all.first { $0.status == .active }
+        works().filter { !$0.isFinished && $0.partCount > 0 }.max { ($0.lastReadAt ?? $0.addedAt) < ($1.lastReadAt ?? $1.addedAt) }
     }
 
-    func setCurrent(_ work: Work) {
-        for w in works() { w.isCurrent = (w.id == work.id) }
-        if work.status == .paused { work.status = .active }
-        save()
+    func feeds() -> [NewsFeed] {
+        (try? context.fetch(FetchDescriptor<NewsFeed>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+    }
+
+    func quotes() -> [FavoriteQuote] {
+        (try? context.fetch(FetchDescriptor<FavoriteQuote>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
     }
 
     func topics() -> [Topic] {
@@ -71,7 +72,7 @@ final class LibraryStore {
             let destination = try Self.libraryDirectory().appendingPathComponent(name)
             try FileManager.default.copyItem(at: url, to: destination)
             do {
-                let book = try await Self.parse(destination, ext: ext)
+                let book = LigatureRepair.repair(try await Self.parse(destination, ext: ext))
                 return insert(book, source: .upload, fileName: name, limit: limit)
             } catch {
                 try? FileManager.default.removeItem(at: destination)
@@ -89,6 +90,7 @@ final class LibraryStore {
         }.value
     }
 
+    @discardableResult
     private func insert(_ book: ImportedBook, source: WorkSource, fileName: String?, limit: Int, title: String? = nil) -> Work {
         let count = works().count
         let work = Work(title: title ?? book.title, author: book.author, source: source, fileName: fileName,
@@ -99,7 +101,6 @@ final class LibraryStore {
             part.work = work
             context.insert(part)
         }
-        if currentWork == nil || count == 0 { work.isCurrent = true }
         save()
         return work
     }
@@ -108,10 +109,8 @@ final class LibraryStore {
         if let name = work.fileName, let dir = try? Self.libraryDirectory() {
             try? FileManager.default.removeItem(at: dir.appendingPathComponent(name))
         }
-        let wasCurrent = work.isCurrent
         context.delete(work)
         save()
-        if wasCurrent, let next = currentWork { setCurrent(next) }
     }
 
     // MARK: Samples
@@ -127,8 +126,7 @@ final class LibraryStore {
 
         if let url = Bundle.main.url(forResource: SampleContent.waldenResource, withExtension: "epub"),
            let book = try? await Self.parse(url, ext: "epub") {
-            let work = insert(book, source: .sample, fileName: nil, limit: limit, title: SampleContent.waldenTitle)
-            work.cadenceHint = "Mornings"
+            insert(book, source: .sample, fileName: nil, limit: limit, title: SampleContent.waldenTitle)
         }
         let topic = Topic(label: SampleContent.briefTopic)
         topic.pastAngles = ["How honeybee swarms choose a nest site"]
@@ -140,33 +138,60 @@ final class LibraryStore {
         save()
     }
 
-    // MARK: Edition length
+    // MARK: Import fixes
 
-    /// Re-chunks every serial's unread parts at a new limit (Schedule › Edition length).
-    /// Read parts are history and stay as they were.
-    func rechunkUnread(limit: Int) {
-        for work in works() {
-            let unread = work.sortedParts.filter { $0.index >= work.nextPartIndex }
-            guard !unread.isEmpty else { continue }
-            var chapters: [SourceChapter] = []
-            for part in unread {
-                let paragraphs = part.text.components(separatedBy: Chunker.paragraphSeparator)
-                if chapters.last?.title == part.chapterTitle {
-                    chapters[chapters.count - 1].paragraphs += paragraphs
-                } else {
-                    chapters.append(SourceChapter(title: part.chapterTitle, paragraphs: paragraphs))
-                }
-            }
-            let chunks = Chunker.chunk(chapters, limit: limit)
-            // Skip the work if nothing would change.
-            if chunks.map(\.text) == unread.map(\.text) { continue }
-            for part in unread { context.delete(part) }
+    private static let pdfTextVersionKey = "FolioPDFTextVersion"
+    /// Bump when PDF text extraction changes; uploaded PDFs are re-read once, keeping the reader's place.
+    static let pdfTextVersion = 4
+
+    func refreshImportedPDFsIfNeeded(limit: Int) async {
+        guard UserDefaults.standard.integer(forKey: Self.pdfTextVersionKey) < Self.pdfTextVersion,
+              let dir = try? Self.libraryDirectory() else { return }
+        for work in works() where work.source == .upload {
+            guard let name = work.fileName, name.lowercased().hasSuffix(".pdf"),
+                  let parsed = try? await Self.parse(dir.appendingPathComponent(name), ext: "pdf") else { continue }
+            let book = LigatureRepair.repair(parsed)
+            // Keep the place by how far through the text the reader was.
+            let old = work.sortedParts
+            let total = max(1, old.reduce(0) { $0 + $1.charCount })
+            let readChars = old.prefix(work.nextPartIndex).reduce(0) { $0 + $1.charCount }
+            let wasFinished = work.isFinished
+            for part in old { context.delete(part) }
+            let chunks = Chunker.chunk(book.chapters, limit: limit)
+            let newTotal = max(1, chunks.reduce(0) { $0 + $1.text.count })
+            var position = 0, running = 0
             for chunk in chunks {
-                let part = Part(index: work.nextPartIndex + chunk.index, text: chunk.text, chapterTitle: chunk.chapterTitle)
+                let part = Part(index: chunk.index, text: chunk.text, chapterTitle: chunk.chapterTitle)
                 part.work = work
                 context.insert(part)
+                if running * total <= readChars * newTotal { position = chunk.index } // the part holding the place
+                running += chunk.text.count
             }
+            work.nextPartIndex = wasFinished ? chunks.count : min(position, max(0, chunks.count - 1))
         }
+        save()
+        // Only once the new text is saved, so an interrupted run is simply redone next launch.
+        UserDefaults.standard.set(Self.pdfTextVersion, forKey: Self.pdfTextVersionKey)
+    }
+
+    // MARK: News feeds
+
+    private static let seededFeedsKey = "FolioSeededFeeds"
+
+    /// The Tech news Brief's starting feeds; the user can remove them and add their own (Library).
+    static let defaultFeeds: [(url: String, title: String)] = [
+        ("https://feeds.arstechnica.com/arstechnica/technology-lab", "Ars Technica"),
+        ("https://www.theverge.com/rss/index.xml", "The Verge"),
+        ("https://techcrunch.com/feed/", "TechCrunch"),
+        ("https://www.technologyreview.com/feed/", "MIT Technology Review"),
+    ]
+
+    func seedFeedsIfNeeded(force: Bool = false) {
+        if !force {
+            guard !UserDefaults.standard.bool(forKey: Self.seededFeedsKey) else { return }
+            UserDefaults.standard.set(true, forKey: Self.seededFeedsKey)
+        }
+        for feed in Self.defaultFeeds { context.insert(NewsFeed(url: feed.url, title: feed.title)) }
         save()
     }
 }

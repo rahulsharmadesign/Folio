@@ -177,26 +177,11 @@ struct EditionEndView: View {
             seen += 1
             cursor = next.date
             let when = SchedulePlanner.whenLabel(next.date, now: app.now).replacingOccurrences(of: ", ", with: " · ")
-            switch next.slot.content {
-            case .brief:
-                let brief = unreadBrief
-                items.append(NextItem(id: "\(next.date)", when: when, title: "The Brief — " + (brief?.title ?? "a topic from your list"), brief: brief))
-            default:
-                items.append(NextItem(id: "\(next.date)", when: when, title: nextPassageTitle))
-            }
+            let kind = app.scheduler.briefKind(for: next)
+            let brief = app.scheduler.unreadBrief(of: kind)
+            items.append(NextItem(id: "\(next.date)", when: when, title: "The Brief — " + (brief?.title ?? kind.label.lowercased()), brief: brief))
         }
         return items
-    }
-
-    private var unreadBrief: Brief? {
-        let d = FetchDescriptor<Brief>(predicate: #Predicate { $0.readAt == nil }, sortBy: [SortDescriptor(\.createdAt)])
-        return try? context.fetch(d).first
-    }
-
-    private var nextPassageTitle: String {
-        guard let work = app.library.currentWork, let part = work.nextPart else { return "Your next serial" }
-        let continues = app.finished?.part.chapterTitle == part.chapterTitle && app.finished?.part.work?.id == work.id
-        return "\(work.title), part \(part.index + 1) — " + (continues ? "the chapter continues" : (part.chapterTitle.isEmpty ? "the next part" : part.chapterTitle))
     }
 
     private var whatsNext: some View {

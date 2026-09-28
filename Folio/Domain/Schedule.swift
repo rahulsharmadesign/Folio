@@ -12,15 +12,38 @@ enum Cadence: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// What a delivery brings: one kind of Brief, or a different kind each day.
 enum SlotContent: String, Codable, CaseIterable, Sendable {
-    case passage, brief, passageAndBrief, publication
+    case mix, story, quote, news, topic
 
     var title: String {
         switch self {
-        case .passage: "Passage"
-        case .brief: "The Brief"
-        case .passageAndBrief: "Passage + The Brief"
-        case .publication: "Publication"
+        case .mix: "A mix"
+        case .story: "A true story"
+        case .quote: "A quote, explained"
+        case .news: "Tech news"
+        case .topic: "Your topics"
+        }
+    }
+
+    /// Stores from before editions were Briefs-only held passage kinds; they become a mix.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = SlotContent(rawValue: raw) ?? (raw == "brief" ? .topic : .mix)
+    }
+
+    /// The kind of Brief this delivery brings on `date`. A mix rotates story → quote → news → topic by day,
+    /// offset by the hour so two mixed deliveries on one day differ.
+    func briefKind(on date: Date, hour: Int, calendar: Calendar = .current) -> BriefKind {
+        switch self {
+        case .story: return .story
+        case .quote: return .quote
+        case .news: return .news
+        case .topic: return .topic
+        case .mix:
+            let order: [BriefKind] = [.story, .quote, .news, .topic]
+            let day = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
+            return order[(day + hour) % order.count]
         }
     }
 }
@@ -60,14 +83,14 @@ struct ScheduleSlot: Codable, Hashable, Identifiable, Sendable {
     static func defaults(for cadence: Cadence) -> [ScheduleSlot] {
         switch cadence {
         case .once:
-            [ScheduleSlot(id: "once-0700", hour: 7, minute: 0, content: .passageAndBrief, weekdays: everyDay)]
+            [ScheduleSlot(id: "once-0700", hour: 7, minute: 0, content: .mix, weekdays: everyDay)]
         case .twice:
-            [ScheduleSlot(id: "twice-0700", hour: 7, minute: 0, content: .passage, weekdays: everyDay),
-             ScheduleSlot(id: "twice-2100", hour: 21, minute: 0, content: .brief, weekdays: everyDay)]
+            [ScheduleSlot(id: "twice-0700", hour: 7, minute: 0, content: .news, weekdays: everyDay),
+             ScheduleSlot(id: "twice-2100", hour: 21, minute: 0, content: .story, weekdays: everyDay)]
         case .custom:
-            [ScheduleSlot(id: "custom-0630", hour: 6, minute: 30, content: .passage, weekdays: weekdaysOnly),
-             ScheduleSlot(id: "custom-1300", hour: 13, minute: 0, content: .publication, weekdays: [2, 4, 6]),
-             ScheduleSlot(id: "custom-2130", hour: 21, minute: 30, content: .brief, weekdays: everyDay)]
+            [ScheduleSlot(id: "custom-0630", hour: 6, minute: 30, content: .quote, weekdays: weekdaysOnly),
+             ScheduleSlot(id: "custom-1300", hour: 13, minute: 0, content: .news, weekdays: everyDay),
+             ScheduleSlot(id: "custom-2130", hour: 21, minute: 30, content: .story, weekdays: everyDay)]
         }
     }
 }

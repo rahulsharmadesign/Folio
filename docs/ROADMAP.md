@@ -56,6 +56,15 @@ Work one milestone at a time. Each ends with the app building and running, the l
 
 **Done when:** it matches 08 and 10, and changing fonts and theme updates the reader live.
 
-## M6 · Polish and release
+## M6 · Books you read freely; editions are Briefs
+**Prompt:** `Do milestone M6 from docs/ROADMAP.md.`
+
+- Books: the reader pages continuously through a book, saves the position on every page turn and reopens there with "Previously". Library tiles show % read, Continue / Start over. Today shows a "Continue reading" card.
+- Editions are Briefs only. Slot content: A mix / A true story / A quote, explained / Tech news / Your topics.
+- Brief kinds: story (Wikipedia), quote (Wikiquote + Wikipedia; the user's favourite quotes first), tech news (the user's RSS/Atom feeds, with defaults). Library › manage news feeds and favourite quotes.
+
+**Done when:** a 300-page EPUB can be read end to end without leaving the reader, reopening resumes at the right part, each Brief kind is generated with only sources it retrieved, and the scheduler, window and feed-parsing logic have unit tests. New UI is minimal and listed for design review.
+
+## M7 · Polish and release
 - Accessibility pass (VoiceOver, Reduce Motion, Increase Contrast), performance on a 1,000-page PDF, crash-free import of malformed EPUBs.
 - Signing, notarization, DMG, and a README for users.
